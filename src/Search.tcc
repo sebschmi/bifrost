@@ -782,6 +782,7 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
     return v_um;
 }
 
+// Called by CompactedDBG<U, G>::search
 template<typename U, typename G>
 vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(     const string& seq, const bool exact, const bool insertion,
                                                                                     const bool deletion, const bool substitution,
@@ -821,7 +822,7 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
 
     string seqs;
 
-    Roaring r, r_pos;
+    Roaring r, r_pos; // The Roaring bitmap
 
     auto worker_func = [&](const bool subst, const bool ins, const bool del, const size_t shift){
 
@@ -1077,7 +1078,8 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
                                 const double ratio_kmers, const bool inexact_search, const size_t nb_threads,
                                 const size_t verbose) const {
 
-     if (invalid){
+    if (verbose) cout << "CompactedDBG::search(): Entering method" << endl;
+    if (invalid){
 
         cerr << "CompactedDBG::search(): Graph is invalid and cannot be searched" << endl;
         return false;
@@ -1085,7 +1087,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
     if (nb_threads > std::thread::hardware_concurrency()){
 
-        cerr << "CompactedDBG::search(): Number of threads cannot be greater than or equal to " << std::thread::hardware_concurrency() << "." << endl;
+        cerr << "CompactedDBG::search(): Number of threads cannot be greater than or equal to std::thread::hardware_concurrency() = " << std::thread::hardware_concurrency() << "." << endl;
         return false;
     }
 
@@ -1099,7 +1101,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
     FILE* fp_tmp = fopen(out_tmp.c_str(), "w");
 
-    if (fp_tmp == NULL) {
+    if (fp_tmp == nullptr) {
 
         cerr << "CompactedDBG::search(): Could not open file " << out_tmp << " for writing." << endl;
         return false;
@@ -1141,6 +1143,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
     if (nb_threads == 1){
 
+        if (verbose) cout << "CompactedDBG::search(): Querying with 1 thread" << endl;
         char* buffer_res = new char[thread_seq_buf_sz];
 
         size_t pos_buffer_out = 0;
@@ -1198,6 +1201,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
     }
     else {
 
+        if (verbose) cout << "CompactedDBG::search(): Querying with " << nb_threads << " threads" << endl;
         {
             bool stop = false;
 
@@ -1209,6 +1213,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
             nb_queries_found = 0;
 
+            if (verbose) cout << "CompactedDBG::search(): Creating query workers" << endl;
             for (size_t t = 0; t < nb_threads; ++t){
 
                 workers.emplace_back(
@@ -1314,6 +1319,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
                 );
             }
 
+            if (verbose) cout << "CompactedDBG::search(): Joining query workers" << endl;
             for (auto& t : workers) t.join();
 
             if (verbose) cout << "CompactedDBG::search(): Found " << nb_queries_found << " queries. " << endl;

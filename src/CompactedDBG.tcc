@@ -1,6 +1,8 @@
 #ifndef BIFROST_COMPACTED_DBG_TCC
 #define BIFROST_COMPACTED_DBG_TCC
 
+#include <iomanip>
+
 static const uint8_t bits[256] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -859,6 +861,7 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
 
     if (format == 2){ // GFA format
 
+        if (verbose) cout << "CompactedDBG::read(): Reading in GFA format" << endl;
         FILE* fp = fopen(input_filename.c_str(), "r");
 
         if (fp == NULL) {
@@ -902,8 +905,11 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
         }
 
         clear();
+        if (verbose) cout << "CompactedDBG::read(): Read header; k = " << k << "; g = " << g << endl;
 
         {
+            auto start_kmer_stream = std::chrono::high_resolution_clock::now();
+
             KmerStream_Build_opt kms_opt;
 
             kms_opt.threads = nb_threads;
@@ -918,11 +924,21 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
 
             MinimizerIndex hmap_min_unitigs_tmp(max(1UL, kms.MinimizerF0()) * 1.05);
             hmap_min_unitigs = std::move(hmap_min_unitigs_tmp);
+
+            auto stop_kmer_stream = std::chrono::high_resolution_clock::now();
+            double duration_kmer_stream = std::chrono::duration_cast<std::chrono::microseconds>(stop_kmer_stream - start_kmer_stream).count() / 1e6;
+            cout << "Took " << std::setprecision(3) << duration_kmer_stream << "s for doing kmer stream things in CompactedDBG::read()" << std::endl;
         }
 
         setKmerGmerLength(k, g);
 
-        if (!invalid) readGFA(input_filename, nb_threads);
+        if (!invalid) {
+            auto start_read_gfa = std::chrono::high_resolution_clock::now();
+            readGFA(input_filename, nb_threads);
+            auto stop_read_gfa = std::chrono::high_resolution_clock::now();
+            double duration_read_gfa = std::chrono::duration_cast<std::chrono::microseconds>(stop_read_gfa - start_read_gfa).count() / 1e6;
+            cout << "Took " << std::setprecision(3) << duration_read_gfa << "s for CompactedDBG::readGFA(input_filename = " << input_filename << ", nb_threads = " << nb_threads << ")" << std::endl;
+        }
 
         if (verbose) cout << endl << "CompactedDBG::read(): Finished reading graph from disk" << endl;
 
@@ -930,6 +946,7 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
     }
     else {
 
+        if (verbose) cout << "CompactedDBG::read(): Reading in FA (???) format" << endl;
         const int k = k_;
         const int g = g_;
 
@@ -1216,7 +1233,7 @@ UnitigMap<U, G> CompactedDBG<U, G>::find(const char* s, const size_t pos_km, con
 }
 
 template<typename U, typename G>
-const_UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const bool extremities_only) const {
+const_UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const bool extremities_only /* = false */) const {
 
     if (invalid){
 

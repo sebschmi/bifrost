@@ -10,8 +10,8 @@ SET(COMPILATION_ARCH "native" CACHE STRING "COMPILATION_ARCH")
 SET(ENABLE_AVX2 "ON" CACHE STRING "ENABLE_AVX2")
 
 # Set some default compile flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -DXXH_NAMESPACE=BIFROST_HASH_")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DXXH_NAMESPACE=BIFROST_HASH_")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -g -DXXH_NAMESPACE=BIFROST_HASH_")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -DXXH_NAMESPACE=BIFROST_HASH_")
 
 set_property(SOURCE BlockedBloomFilter.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " -funroll-loops")
 
@@ -36,7 +36,10 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
 	message("Build type: Debug")
-	add_compile_options(-g)
+	add_compile_options(-g -fsanitize=address)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+	message(${CMAKE_EXE_LINKER_FLAGS})
 else(CMAKE_BUILD_TYPE MATCHES Debug)
 	if(CMAKE_BUILD_TYPE MATCHES Profile)
 		message("Build type: Profiling")

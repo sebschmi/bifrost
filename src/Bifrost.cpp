@@ -1,5 +1,6 @@
 #include "CompactedDBG.hpp"
 #include "ColoredCDBG.hpp"
+#include <iomanip>
 
 using namespace std;
 
@@ -526,6 +527,21 @@ bool check_ProgramOptions(CCDBG_Build_opt& opt) {
     return ret;
 }
 
+std::basic_ostream<char>& operator<<(std::basic_ostream<char>& stream, const std::vector<std::string>& strings) {
+    stream << "[";
+    bool first = true;
+    for (const auto& string : strings) {
+        if (first) {
+            first = false;
+        } else {
+            stream << ", ";
+        }
+        stream << string;
+    }
+    stream << "]";
+    return stream;
+}
+
 int main(int argc, char **argv){
 
     if (argc < 2) PrintUsage();
@@ -617,8 +633,17 @@ int main(int argc, char **argv){
 
                     CompactedDBG<> cdbg(opt.k, opt.g);
 
+                    auto start_read = std::chrono::high_resolution_clock::now();
                     cdbg.read(opt.filename_graph_in, opt.nb_threads, opt.verbose);
+                    auto stop_read = std::chrono::high_resolution_clock::now();
+                    double duration_read = std::chrono::duration_cast<std::chrono::microseconds>(stop_read - start_read).count() / 1e6;
+                    cout << "Took " << std::setprecision(3) << duration_read << "s for CompactedDBG::read(input_filename = " << opt.filename_graph_in << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
+
+                    auto start_search = std::chrono::high_resolution_clock::now();
                     cdbg.search(opt.filename_query_in, opt.prefixFilenameOut, opt.ratio_kmers, opt.inexact_search, opt.nb_threads, opt.verbose);
+                    auto stop_search = std::chrono::high_resolution_clock::now();
+                    double duration_search = std::chrono::duration_cast<std::chrono::microseconds>(stop_search - start_search).count() / 1e6;
+                    cout << "Took " << std::setprecision(3) << duration_search << "s for CompactedDBG::search(query_filenames = " << opt.filename_query_in << ", out_filename_prefix = " << opt.prefixFilenameOut << ", ratio_kmers = " << opt.ratio_kmers << ", inexact_search = " << opt.inexact_search << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
                 }
             }
         }
