@@ -510,11 +510,11 @@ bool ColoredCDBG<U>::read(const string& input_graph_filename, const string& inpu
 
             GFA_Parser::GFA_line r = graph.read(graph_file_id, new_file_opened, true);
 
-            while ((i < chunk_size) && ((r.first != nullptr) || (r.second != nullptr))){
+            while ((i < chunk_size) && ((r.first != nullptr) || (r.second != nullptr))) {
 
-                if (r.first != nullptr){ // It is a sequence
+                if (r.first != nullptr) { // It is a sequence
 
-                    if (r.first->tags.empty()){
+                    if (r.first->tags.empty()) {
 
                         cerr << "ColoredCDBG::read(): One sequence line in GFA file has no DataAccessor tag. Operation aborted." << endl;
                         return false;
@@ -546,11 +546,11 @@ bool ColoredCDBG<U>::read(const string& input_graph_filename, const string& inpu
 
         auto join_function = [this](const vector<pair<Kmer, uint8_t>>& unitig_tags) {
 
-            for (const auto& p : unitig_tags){
+            for (const auto& p : unitig_tags) {
 
                 UnitigColorMap<U> ucm(this->find(p.first, true));
 
-                if (ucm.isEmpty){
+                if (ucm.isEmpty) {
 
                     cerr << "ColoredCDBG::read(): Internal error, operation aborted." << endl;
                     cerr << "ColoredCDBG::read(): A unitig from GFA file is not found in the in-memory graph." << endl;
@@ -563,7 +563,7 @@ bool ColoredCDBG<U>::read(const string& input_graph_filename, const string& inpu
 
                 *da = DataAccessor<U>(p.second);
 
-                if (!ucm.strand){ // Unitig has been inserted in reverse-complement, need to reverse order of color sets
+                if (!ucm.strand) { // Unitig has been inserted in reverse-complement, need to reverse order of color sets
 
                     UnitigColors* uc = da->getUnitigColors(ucm);
 
@@ -612,6 +612,12 @@ bool ColoredCDBG<U>::read(const string& input_graph_filename, const string& inpu
             }
 
             for (auto& t : workers) t.join();
+        }
+
+        // TODO output information about color vectors
+        if (verbose) {
+            const auto nb_colors = this->getNbColors();
+            std::cout << "There are " << nb_colors << " colors" << std::endl;
         }
     }
 

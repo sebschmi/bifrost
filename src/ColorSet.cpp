@@ -256,7 +256,7 @@ size_t UnitigColors::getSizeInBytes() const {
         return ret;
     }
 
-    return sizeof(UnitigColors); // if (flag == ptrSharedUnitigColors), we do not own the pointed UnitigCors so its size is not considered
+    return sizeof(UnitigColors); // if (flag == ptrSharedUnitigColors), we do not own the pointed UnitigColors so its size is not considered
 }
 
 void UnitigColors::add(const UnitigMapBase& um, const size_t color_id) {
@@ -1217,7 +1217,10 @@ bool UnitigColors::write(ostream& stream_out, const bool copy_UnitigColors) cons
             t_bmp.write(stream_out);
             t_bmp.detach();
         }
-        else stream_out.write(reinterpret_cast<const char*>(&setBits), sizeof(uintptr_t));
+        else {
+            // localSingleInt or localBitVector
+            stream_out.write(reinterpret_cast<const char*>(&setBits), sizeof(uintptr_t));
+        }
 
         return true;
     }
