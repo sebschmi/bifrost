@@ -144,6 +144,7 @@ int parse_ProgramOptions(int argc, char **argv, CCDBG_Build_opt& opt) {
     if (strcmp(argv[1], "build") == 0) opt.build = true;
     else if (strcmp(argv[1], "update") == 0) opt.update = true;
     else if (strcmp(argv[1], "query") == 0) opt.query = true;
+    else if (strcmp(argv[1], "helsitests") == 0) opt.helsitests = true;
 
     if (opt.build || opt.update || opt.query){
 
@@ -306,9 +307,9 @@ bool check_ProgramOptions(CCDBG_Build_opt& opt) {
 
     // Check general parameters
 
-    if (!opt.build && !opt.update && !opt.query){
+    if (!opt.build && !opt.update && !opt.query && !opt.helsitests){
 
-        cerr << "Error: No command selected (can be 'build' or 'update' or 'query')." << endl;
+        cerr << "Error: No command selected (can be 'build' or 'update' or 'query' or 'helsitests')." << endl;
         ret = false;
     }
 
@@ -393,7 +394,7 @@ bool check_ProgramOptions(CCDBG_Build_opt& opt) {
             ret = false;
         }
     }
-    else {
+    else if (!opt.helsitests) {
 
         if (opt.prefixFilenameOut.length() == 0) {
 
@@ -559,14 +560,20 @@ int main(int argc, char **argv){
 
             if (opt.build){ // Build the graph
 
-                if (opt.outputColors){
+                if (opt.outputColors) {
 
                     ColoredCDBG<> ccdbg(opt.k, opt.g);
 
                     ccdbg.buildGraph(opt);
                     ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
-                    ccdbg.buildColors(opt);
-                    ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.verbose);
+
+                    ColoredCDBG<> helsitigged_ccdbg(opt.k, opt.g);
+                    bool ok = helsitigged_ccdbg.convert_tigs(ccdbg, Tigs::UNITIGS, opt.nb_threads);
+
+                    if (ok) {
+                        helsitigged_ccdbg.buildColors(opt);
+                        helsitigged_ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.verbose);
+                    }
                 }
                 else {
 
@@ -645,6 +652,50 @@ int main(int argc, char **argv){
                     double duration_search = std::chrono::duration_cast<std::chrono::microseconds>(stop_search - start_search).count() / 1e6;
                     cout << "Took " << std::setprecision(3) << duration_search << "s for CompactedDBG::search(query_filenames = " << opt.filename_query_in << ", out_filename_prefix = " << opt.prefixFilenameOut << ", ratio_kmers = " << opt.ratio_kmers << ", inexact_search = " << opt.inexact_search << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
                 }
+            } else if (opt.helsitests) {
+                cout << "Executing helsitests" << endl;
+
+                ColoredCDBG<> ccdbg(4, 2);
+                ccdbg.addUnitig("ACACAC", 0);
+                ccdbg.addUnitig("ACACAC", 1);
+
+                for (const auto& unitig : ccdbg) {
+                    const string seq(unitig.referenceUnitigToString());
+                    cout << seq << endl;
+                }
+
+                {
+                    const auto unitig = ccdbg.findUnitig("ACAC", 0, 4);
+                    const string seq(unitig.referenceUnitigToString());
+                    cout << "Kmer ACAC is in " << seq << endl;
+                }
+
+                {
+                    const auto unitigs = ccdbg.searchSequence("ACACAG", false, false, false, false, false);
+                    cout << "Search results of ACACAG" << endl;
+                    for (const auto& entry : unitigs) {
+                        const auto& id = entry.first;
+                        const string seq(entry.second.referenceUnitigToString());
+                        cout << "Hit " << id << " in unitig " << seq << endl;
+                    }
+                }
+
+                {
+                    const auto unitigs = ccdbg.searchSequence("ACACA", false, false, false, false, false);
+                    cout << "Search results of ACACAG" << endl;
+                    for (const auto& entry : unitigs) {
+                        const auto& id = entry.first;
+                        const string seq(entry.second.referenceUnitigToString());
+                        cout << "Hit " << id << " in unitig " << seq << endl;
+                    }
+                }
+
+                /*ccdbg.buildGraph(opt);
+                ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
+                ccdbg.buildColors(opt);
+                ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.verbose);*/
+
+                cout << "Finished helsitests" << endl;
             }
         }
     }

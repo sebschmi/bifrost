@@ -124,14 +124,19 @@ class ReadHasherMinimizer {
 
         void update(const char* seq_buf, const size_t seq_buf_sz) {
 
+            //cout << "updating KmerStream with " << seq_buf << " at " << (void*) seq_buf << endl;
+
             const char* str = seq_buf;
             const char* str_end = seq_buf + seq_buf_sz;
 
             while (str < str_end) { // for each input
 
                 const int sl = strlen(str);
+                if (sl > seq_buf_sz) {
+                    cout << "strlen > seq_buf_sz" << endl;
+                }
 
-                if (sl >= k){
+                if (sl >= k) {
 
                     size_t i = 0, j = 0, prev_pos_min = 0xffffffffffffffffULL;
 
@@ -179,6 +184,7 @@ class ReadHasherMinimizer {
 
                             if (min_pos != prev_pos_min){
 
+                                //cout << "updating sc_min with minimizer at pos " << min_pos << " of max len " << (str_end - (str + min_pos)) << " where g = " << g << endl;
                                 sc_min.update(Minimizer(str + min_pos).rep().hash());
 
                                 prev_pos_min = min_pos;
@@ -807,6 +813,8 @@ class KmerStream {
 
             rqh.setG(g);
             rsh.setG(g);
+
+            Minimizer::g = g;
 
             if (verbose) cout << "KmerStream::KmerStream(): Start computing k-mer cardinality estimations" << endl;
 

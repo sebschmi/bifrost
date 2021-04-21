@@ -618,6 +618,8 @@ bool ColoredCDBG<U>::read(const string& input_graph_filename, const string& inpu
         if (verbose) {
             const auto nb_colors = this->getNbColors();
             std::cout << "There are " << nb_colors << " colors" << std::endl;
+
+            DataStorage<U>* ds = this->getData();
         }
     }
 

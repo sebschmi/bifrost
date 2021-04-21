@@ -1257,7 +1257,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
                             const size_t buffers_seq_sz = buffers_seq.size();
 
-                            for (size_t i = 0; i < buffers_seq_sz; ++i){
+                            for (size_t i = 0; i < buffers_seq_sz; ++i) {
 
                                 bool is_found = false;
 
@@ -1269,7 +1269,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
                                 const vector<pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   buffers_seq[i], true, inexact_search, inexact_search,
                                                                                                             inexact_search, ratio_kmers, true);
 
-                                if (inexact_search){
+                                if (inexact_search) {
 
                                     Roaring r;
 
@@ -1279,7 +1279,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
                                 }
                                 else is_found = (v.size() >= nb_km_min);
 
-                                if (pos_buffer_out + l_name + l_query_res >= thread_seq_buf_sz){ // If next result cannot fit in the buffer
+                                if (pos_buffer_out + l_name + l_query_res >= thread_seq_buf_sz) { // If next result cannot fit in the buffer
 
                                     unique_lock<mutex> lock(mutex_file_out); // Get the output lock
 
@@ -1302,7 +1302,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
                                 pos_buffer_out += l_name + l_query_res;
                             }
 
-                            if (pos_buffer_out > 0){ // Flush unresult written to final output
+                            if (pos_buffer_out > 0) { // Flush unresult written to final output
 
                                 unique_lock<mutex> lock(mutex_file_out);
 

@@ -492,6 +492,8 @@ bool Minimizer::operator!=(const Minimizer& o) const {
 
 void Minimizer::set_minimizer(const char *s)  {
 
+    //cout << "Minimizer::set_minimizer(s = " << s << " at [" << (void*) s << "]" << "); g = " << g << endl;
+
     for (size_t i = 0; i < MAX_G/32; ++i) longs[i] = 0;
 
     for (size_t i = 0, j, l; i < g; ++i) {
@@ -499,7 +501,9 @@ void Minimizer::set_minimizer(const char *s)  {
         j = 62 - ((i & 0x1f) << 1);
         l = i >> 5;
 
+        //cout << "computing x" << endl;
         const size_t x = ((*s) & 4) >> 1;
+        //cout << "x = " << x << endl;
 
         longs[l] |= ((x + ((x ^ (*s & 2)) >> 1)) << j);
 

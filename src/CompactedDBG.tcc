@@ -6793,13 +6793,13 @@ typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_
                 cmHead.getData()->clear(cmHead);
                 cmTail.getData()->clear(cmTail);
 
-                if (cmHead.isShort || cmHead.isAbundant){
+                if (cmHead.isShort || cmHead.isAbundant) {
 
-                    if (cmHead.isShort){ //If head is a short unitig, swap and delete it
+                    if (cmHead.isShort) { //If head is a short unitig, swap and delete it
 
                         --v_kmers_size;
 
-                        if (cmHead.pos_unitig != v_kmers_size){
+                        if (cmHead.pos_unitig != v_kmers_size) {
 
                             swapUnitigs(true, cmHead.pos_unitig, v_kmers_size);
 
@@ -6812,7 +6812,7 @@ typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_
                     else if (cmHead.isAbundant) deleteUnitig_<false>(false, true, cmHead.pos_unitig);
                 }
 
-                if (cmTail.isShort || cmTail.isAbundant){
+                if (cmTail.isShort || cmTail.isAbundant) {
 
                     if (cmTail.isShort){ //If tail is a short unitig, swap and delete it
 
@@ -7851,7 +7851,7 @@ void CompactedDBG<U, G>::readGFA(const string& graphfilename, const size_t nb_th
 
     if (nb_threads == 1){
 
-        while ((r.first != nullptr) || (r.second != nullptr)){
+        while ((r.first != nullptr) || (r.second != nullptr)) {
 
             if (r.first != nullptr) addUnitig(r.first->seq, (r.first->seq.length() == k_) ? km_unitigs.size() : v_unitigs.size());
 

@@ -59,6 +59,12 @@
 
 using namespace std;
 
+enum Tigs {
+    UNITIGS,
+    PATHTIGS,
+    HELSITIGS,
+};
+
 /** @struct CDBG_Build_opt
 * @brief Most members of this structure are parameters for CompactedDBG<U, G>::build(), except for:
 * - CDBG_Build_opt::k and CDBG_Build_opt::g as they are parameters of the graph constructor.
@@ -151,6 +157,7 @@ struct CDBG_Build_opt {
     bool build;
     bool update;
     bool query;
+    bool helsitests;
 
     bool clipTips;
     bool deleteIsolated;
@@ -604,6 +611,13 @@ class CompactedDBG {
                     const double ratio_kmers, const bool inexact_search, const size_t nb_threads,
                     const size_t verbose = false) const;
 
+        /** Perform the unitig-to-X conversion operation, but do not convert anything.
+         * This is merely for debugging purposes.
+         */
+        bool convert_tigs(CompactedDBG<U, G> dbg, const Tigs tigs, const size_t nb_threads);
+
+        bool addUnitig(const string& str_unitig, const size_t id_unitig);
+
     protected:
 
         bool annotateSplitUnitigs(const CompactedDBG<U, G>& o, const size_t nb_threads = 1, const bool verbose = false);
@@ -655,7 +669,6 @@ class CompactedDBG {
         UnitigMap<U, G> findUnitig(const char* s, const size_t pos, const size_t len, const minHashIterator<RepHash>& it_min);
         const_UnitigMap<U, G> findUnitig(const char* s, const size_t pos, const size_t len, const minHashIterator<RepHash>& it_min) const;
 
-        bool addUnitig(const string& str_unitig, const size_t id_unitig);
         bool addUnitig(const string& str_unitig, const size_t id_unitig, const size_t id_unitig_r, const size_t is_short_r);
         bool addUnitig(const string& str_unitig, const size_t id_unitig, SpinLock& lck_unitig, SpinLock& lck_kmer/*, const bool enable_abundant = true*/);
         void swapUnitigs(const bool isShort, const size_t id_a, const size_t id_b);
@@ -762,5 +775,6 @@ class CompactedDBG {
 
 #include "CompactedDBG.tcc"
 #include "Search.tcc"
+#include "Helsitigs.tcc"
 
 #endif

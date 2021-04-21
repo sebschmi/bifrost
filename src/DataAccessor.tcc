@@ -156,7 +156,7 @@ void DataAccessor<U>::concat(const UnitigColorMap<U>& um_dest, const UnitigColor
 }
 
 template<>
-inline void DataAccessor<void>::concat(const UnitigColorMap<void>& um_dest, const UnitigColorMap<void>& um_src){
+inline void DataAccessor<void>::concat(const UnitigColorMap<void>& um_dest, const UnitigColorMap<void>& um_src) {
 
     DataStorage<void>* ds = um_dest.getGraph()->getData();
 
@@ -166,7 +166,7 @@ inline void DataAccessor<void>::concat(const UnitigColorMap<void>& um_dest, cons
     DataAccessor<void>* da_src = um_src.getData();
     UnitigColors* uc_src = da_src->getUnitigColors(um_src);
 
-    if ((uc_dest != nullptr) || (uc_src != nullptr)){ // If a UnitigColors exists for at least one of the two unitigs
+    if ((uc_dest != nullptr) || (uc_src != nullptr)) { // If a UnitigColors exists for at least one of the two unitigs
 
         const Kmer head = um_dest.getUnitigHead(); // Get head k-mer of reference unitig of um_dest
         const Kmer new_head = um_dest.strand ? head : um_dest.getUnitigTail().twin(); // Compute new head k-mer after concatenation
@@ -178,7 +178,7 @@ inline void DataAccessor<void>::concat(const UnitigColorMap<void>& um_dest, cons
         // If reference unitig of um_dest has no UnitigColors associated
         // OR if the new head k-mer (after concat.) is not the same has the current head k-mer (before concat.)
         // OR if UnitigColors associated with reference unitig of um_dest is in the overflow system of DataStorage (da_dest->get() == 0)
-        if ((uc_ptr == nullptr) || (head != new_head) || (da_dest->get() == 0)){
+        if ((uc_ptr == nullptr) || (head != new_head) || (da_dest->get() == 0)) {
             //
             // If (da_dest->get() == 0, UnitigColors of um_dest cannot be recycled 'cause new unitig length will be different from the one of um_dest
             const pair<DataAccessor<void>, pair<UnitigColors*, void*>> p  = ds->insert(new_head, um_dest.size + um_src.size - um_dest.getGraph()->getK() + 1);
