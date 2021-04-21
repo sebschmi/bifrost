@@ -91,6 +91,8 @@ class unitigIterator : public std::iterator<std::input_iterator_tag, UnitigMap<U
         */
         const UnitigMap<U, G, is_const>* operator->() const;
 
+        void setIndex(size_t i);
+
     private:
 
         size_t i;

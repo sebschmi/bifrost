@@ -783,6 +783,14 @@ struct KmerHashTable {
                 return *this;
             }
 
+            iterator_ operator+(size_t v) {
+                auto copy(*this);
+                for (size_t i = 0; i < v; i++) {
+                    copy++;
+                }
+                return copy;
+            }
+
             bool operator==(const iterator_ &o) const { return (ht == o.ht) && (h == o.h); }
             bool operator!=(const iterator_ &o) const { return (ht != o.ht) || (h != o.h); }
 

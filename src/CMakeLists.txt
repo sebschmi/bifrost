@@ -30,6 +30,15 @@ else()
     message(FATAL_ERROR "zlib not found. Required for to output files")
 endif(ZLIB_FOUND)
 
+set(LIBRUST_HELSITIGS "${CMAKE_CURRENT_SOURCE_DIR}/../../helsitigs/rust_helsitigs/target/debug/librust_helsitigs.so")
+if (EXISTS ${LIBRUST_HELSITIGS})
+else()
+    message( FATAL_ERROR "Not found: ${LIBRUST_HELSITIGS}" )
+endif()
+
+target_link_libraries(bifrost_static ${LIBRUST_HELSITIGS})
+target_link_libraries(bifrost_dynamic ${LIBRUST_HELSITIGS})
+
 target_link_libraries(Bifrost bifrost_dynamic)
 
 install(TARGETS Bifrost DESTINATION bin)

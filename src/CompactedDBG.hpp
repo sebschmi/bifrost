@@ -60,9 +60,10 @@
 using namespace std;
 
 enum Tigs {
-    UNITIGS,
-    PATHTIGS,
-    HELSITIGS,
+    NONE = 0,
+    UNITIGS = 1,
+    PATHTIGS = 2,
+    HELSITIGS = 3,
 };
 
 /** @struct CDBG_Build_opt
@@ -174,10 +175,12 @@ struct CDBG_Build_opt {
 
     vector<string> filename_query_in;
 
+    Tigs compress_tigs;
+
     CDBG_Build_opt() :  nb_threads(1), k(DEFAULT_K), g(-1), nb_bits_unique_kmers_bf(14),
                         nb_bits_non_unique_kmers_bf(14), read_chunksize(64), ratio_kmers(0.8),
                         build(false), update(false), query(false), clipTips(false), deleteIsolated(false),
-                        inexact_search(false), useMercyKmers(false), outputGFA(true), verbose(false) {}
+                        inexact_search(false), useMercyKmers(false), outputGFA(true), verbose(false), compress_tigs(Tigs::NONE) {}
 };
 
 /** @typedef const_UnitigMap
@@ -614,9 +617,13 @@ class CompactedDBG {
         /** Perform the unitig-to-X conversion operation, but do not convert anything.
          * This is merely for debugging purposes.
          */
-        bool convert_tigs(CompactedDBG<U, G> dbg, const Tigs tigs, const size_t nb_threads);
+        bool convert_tigs(CompactedDBG<U, G> dbg, const Tigs tigs, const size_t nb_threads, const string& matching_file_prefix);
 
         bool addUnitig(const string& str_unitig, const size_t id_unitig);
+
+        inline size_t getHashtableSize() const {
+            return h_kmers_ccov.size();
+        }
 
     protected:
 

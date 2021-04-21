@@ -1434,6 +1434,11 @@ UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const bool extremities_
                     }
                     else {
 
+                        if (unitig_id >= v_unitigs.size()) {
+                            cerr << "Unitig id " << unitig_id << " is out of bounds for v_unitigs of size " << v_unitigs.size() << endl;
+                            return UnitigMap<U, G>();
+                        }
+
                         len = v_unitigs[unitig_id]->length() - k_;
                         pos_match = unitig_id_pos - mhr_pos;
 

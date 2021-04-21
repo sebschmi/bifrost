@@ -44,7 +44,8 @@ void PrintUsage() {
     cout << "   -B, --bloom-bits2        Number of Bloom filter bits per k-mer with 2+ occurrences in the input files (default is 14)" << endl;
     cout << "   -l, --load-mbbf          Input Blocked Bloom Filter file, skips filtering step (default is no input)" << endl;
     cout << "   -w, --write-mbbf         Output Blocked Bloom Filter file (default is no output)" << endl;
-    cout << "   -u, --chunk-size         Read chunk size per thread (default is 64)" << endl << endl;
+    cout << "   -u, --chunk-size         Read chunk size per thread (default is 64)" << endl;
+    cout << "   -C, --compress-tigs      Compress the tigs with the given algorithm (default is no compression)" << endl << endl;
 
     cout << "   > Optional with no argument:" << endl << endl;
 
@@ -135,6 +136,7 @@ int parse_ProgramOptions(int argc, char **argv, CCDBG_Build_opt& opt) {
         {"colors",              no_argument,        0, 'c'},
         {"keep-mercy",          no_argument,        0, 'y'},
         {"fasta",               no_argument,        0, 'a'},
+        {"compress-tigs",       required_argument,  0, 'C'},
         {0,                     0,                  0,  0 }
     };
 
@@ -217,6 +219,18 @@ int parse_ProgramOptions(int argc, char **argv, CCDBG_Build_opt& opt) {
                     break;
                 case 'a':
                     opt.outputGFA = false;
+                    break;
+                case 'C':
+                    if (strcmp(optarg, "unitigs") == 0) {
+                        opt.compress_tigs = Tigs::UNITIGS;
+                    } else if (strcmp(optarg, "pathtigs") == 0) {
+                        opt.compress_tigs = Tigs::PATHTIGS;
+                    } else if (strcmp(optarg, "helsitigs") == 0) {
+                        opt.compress_tigs = Tigs::HELSITIGS;
+                    } else {
+                        cerr << "-C or --compress-tigs was given, but argument is unknown: " << optarg << endl;
+                        return 2;
+                    }
                     break;
                 default: break;
             }
@@ -567,12 +581,17 @@ int main(int argc, char **argv){
                     ccdbg.buildGraph(opt);
                     ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
 
-                    ColoredCDBG<> helsitigged_ccdbg(opt.k, opt.g);
-                    bool ok = helsitigged_ccdbg.convert_tigs(ccdbg, Tigs::UNITIGS, opt.nb_threads);
+                    bool ok = true;
+                    if (opt.compress_tigs != Tigs::NONE) {
+                        ColoredCDBG<> helsitigged_ccdbg(opt.k, opt.g);
+                        ok = helsitigged_ccdbg.convert_tigs(ccdbg, opt.compress_tigs, opt.nb_threads,
+                                                                 opt.prefixFilenameOut);
+                        ccdbg = move(helsitigged_ccdbg);
+                    }
 
                     if (ok) {
-                        helsitigged_ccdbg.buildColors(opt);
-                        helsitigged_ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.verbose);
+                        ccdbg.buildColors(opt);
+                        ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.verbose);
                     }
                 }
                 else {
@@ -581,6 +600,15 @@ int main(int argc, char **argv){
 
                     cdbg.build(opt);
                     cdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
+
+                    bool ok = true;
+                    if (opt.compress_tigs != Tigs::NONE) {
+                        CompactedDBG<> helsitigged_cdbg(opt.k, opt.g);
+                        ok = helsitigged_cdbg.convert_tigs(cdbg, opt.compress_tigs, opt.nb_threads,
+                                                            opt.prefixFilenameOut);
+                        cdbg = move(helsitigged_cdbg);
+                    }
+
                     cdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.outputGFA, opt.verbose);
                 }
             }

@@ -116,6 +116,11 @@ class MinimizerIndex {
 
         ~MinimizerIndex();
 
+        BFG_INLINE size_t sz() const {
+
+            return size_;
+        }
+
         BFG_INLINE size_t size() const {
 
             return pop;

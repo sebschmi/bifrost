@@ -258,6 +258,20 @@ class UnitigMap : public UnitigMapBase {
         bool isCoverageFull() const;
         size_t getCoverage(const size_t pos) const;
 
+        inline size_t getIndex() const {
+            auto v_unitigs_sz = cdbg->v_unitigs.size();
+            auto v_kmers_sz = cdbg->km_unitigs.size();
+            auto h_kmers_ccov_sz = cdbg->h_kmers_ccov.size();
+
+            if (!isShort && !isAbundant) {
+                return pos_unitig;
+            } else if (isShort) {
+                return pos_unitig + v_unitigs_sz;
+            } else if (isAbundant) {
+                return pos_unitig + v_unitigs_sz + v_kmers_sz;
+            }
+        }
+
     private:
 
         UnitigMap(size_t p_unitig, size_t i, size_t l, size_t sz, bool short_, bool abundance, bool strd, CompactedDBG_ptr_t cdbg_);
