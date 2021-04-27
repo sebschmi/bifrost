@@ -458,6 +458,14 @@ class CompactedDBG {
         */
         const_UnitigMap<U, G> find(const Kmer& km, const bool extremities_only = false) const;
 
+        /** Find the unitigs containing the queried k-mer in the Compacted de Bruijn graph. This method is likely not correct.
+        * @param km is the queried k-mer (see Kmer class). It does not need to be a canonical k-mer.
+        * @param extremities_only is a boolean indicating if the k-mer must be searched only in the unitig heads and tails (extremities_only = true).
+        * By default, the k-mer is searched everywhere (extremities_only = false) but is is slightly slower than looking only in the unitig heads and tails.
+        * @return vector of UnitigMap<U, G> objects containing the k-mer mapping information to the unitigs containing the queried k-mer (if present).
+        */
+        vector<UnitigMap<U, G>> findAll(const Kmer& km, const bool extremities_only = false);
+
         /** Find the unitig containing the k-mer starting at a given position in a query sequence and extends the mapping (if the k-mer is found, the
         * function extends the mapping from the k-mer as long as the query sequence and the unitig matches).
         * @param s is a pointer to an array of character containing the sequence to query.
@@ -617,7 +625,7 @@ class CompactedDBG {
         /** Perform the unitig-to-X conversion operation, but do not convert anything.
          * This is merely for debugging purposes.
          */
-        bool convert_tigs(CompactedDBG<U, G> dbg, const Tigs tigs, const size_t nb_threads, const string& matching_file_prefix);
+        bool convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, const size_t nb_threads, const string& matching_file_prefix);
 
         bool addUnitig(const string& str_unitig, const size_t id_unitig);
 
@@ -625,7 +633,13 @@ class CompactedDBG {
             return h_kmers_ccov.size();
         }
 
-    protected:
+        inline void initialiseHashtable(size_t size) {
+            h_kmers_ccov = h_kmers_ccov_t(size);
+        }
+
+        void colorUnitig(const CompactedDBG<U, G>* dbg, const UnitigMap<U, G>& um, const ptrdiff_t* tigs_edge_out_offset, const ptrdiff_t* tigs_edge_out_limit, const size_t* tigs_insert_out_offset, const size_t* tigs_insert_out_limit, size_t nb_threads, bool initialise_data, size_t total_tigs);
+
+    //protected:
 
         bool annotateSplitUnitigs(const CompactedDBG<U, G>& o, const size_t nb_threads = 1, const bool verbose = false);
 
@@ -640,7 +654,7 @@ class CompactedDBG {
         bool mergeData(const CompactedDBG<U, G>& o, const size_t nb_threads = 1, const bool verbose = false);
         bool mergeData(CompactedDBG<U, G>&& o, const size_t nb_threads = 1, const bool verbose = false);
 
-    private:
+    //private:
 
         CompactedDBG<U, G>& toDataGraph(CompactedDBG<void, void>&& o, const size_t nb_threads = 1);
 

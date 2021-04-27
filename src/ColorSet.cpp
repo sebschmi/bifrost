@@ -263,8 +263,9 @@ void UnitigColors::add(const UnitigMapBase& um, const size_t color_id) {
 
     uintptr_t flag = setBits & flagMask;
 
-    if (flag == ptrUnitigColors){
+    if (flag == ptrUnitigColors) {
 
+        //cout << "UnitigColors::add(): flag == ptrUnitigColors" << endl;
         UnitigColors* uc = getPtrUnitigColors();
 
         if (!uc[0].contains(color_id)) uc[1].add(um, color_id);
@@ -275,8 +276,9 @@ void UnitigColors::add(const UnitigMapBase& um, const size_t color_id) {
         size_t color_id_start = um_km_sz * color_id + um.dist;
         const size_t color_id_end = color_id_start + std::min(um_km_sz - um.dist, um.len);
 
-        if (flag == ptrSharedUnitigColors){ // copy-on-write
+        if (flag == ptrSharedUnitigColors) { // copy-on-write
 
+            //cout << "UnitigColors::add(): flag == ptrSharedUnitigColors" << endl;
             SharedUnitigColors* s_uc = getPtrSharedUnitigColors();
 
             *this = s_uc->first;
@@ -288,6 +290,7 @@ void UnitigColors::add(const UnitigMapBase& um, const size_t color_id) {
 
         if (flag == localSingleInt){
 
+            //cout << "UnitigColors::add(): flag == localSingleInt" << endl;
             const uintptr_t setBits_tmp = setBits >> shiftMaskBits;
 
             if ((setBits_tmp < maxBitVectorIDs) && ((color_id_end - 1) < maxBitVectorIDs)){
@@ -315,6 +318,7 @@ void UnitigColors::add(const UnitigMapBase& um, const size_t color_id) {
 
         if (flag == localBitVector){
 
+            //cout << "UnitigColors::add(): flag == localBitVector" << endl;
             if ((setBits == localBitVector) && (um.len == 1)) setBits = (color_id_start << shiftMaskBits) | localSingleInt;
             else if ((color_id_end - 1) < maxBitVectorIDs){
 
@@ -410,6 +414,7 @@ void UnitigColors::add(const UnitigMapBase& um, const size_t color_id) {
 
         if (flag == localTinyBitmap) {
 
+            //cout << "UnitigColors::add(): flag == localTinyBitmap" << endl;
             bool add_ok = true;
 
             uint16_t* setPtrTinyBmp = getPtrTinyBitmap();
@@ -443,6 +448,7 @@ void UnitigColors::add(const UnitigMapBase& um, const size_t color_id) {
 
         if (flag == ptrBitmap) {
 
+            //cout << "UnitigColors::add(): flag == ptrBitmap" << endl;
             Bitmap* bitmap = getPtrBitmap();
 
             for (; color_id_start < color_id_end; ++color_id_start) bitmap->r.add(color_id_start);
@@ -779,21 +785,29 @@ bool UnitigColors::contains(const UnitigMapBase& um, const size_t color_id) cons
 
     if (flag == ptrUnitigColors){
 
+        //cout << "UnitigColors::contains(" << um.dist << ", " << color_id << "): flag == ptrUnitigColors" << endl;
         const UnitigColors* uc = getConstPtrUnitigColors();
 
         return (uc[0].contains(color_id) || uc[1].contains(um, color_id));
     }
 
-    if (flag == ptrSharedUnitigColors) return getConstPtrSharedUnitigColors()->first.contains(um, color_id);
+    if (flag == ptrSharedUnitigColors) {
+        //cout << "UnitigColors::contains(" << um.dist << ", " << color_id << "): flag == ptrSharedUnitigColors" << endl;
+        return getConstPtrSharedUnitigColors()->first.contains(um, color_id);
+    }
 
     const size_t um_km_sz = um.size - Kmer::k + 1;
     size_t color_id_start = um_km_sz * color_id + um.dist;
     const size_t color_id_end = color_id_start + std::min(um_km_sz - um.dist, um.len);
 
-    if (flag == ptrBitmap) return getConstPtrBitmap()->r.containsRange(color_id_start, color_id_end);
+    if (flag == ptrBitmap) {
+        //cout << "UnitigColors::contains(" << um.dist << ", " << color_id << "): flag == ptrBitmap" << endl;
+        return getConstPtrBitmap()->r.containsRange(color_id_start, color_id_end);
+    }
 
     if (flag == localTinyBitmap){
 
+        //cout << "UnitigColors::contains(" << um.dist << ", " << color_id << "): flag == localTinyBitmap" << endl;
         uint16_t* setPtrTinyBmp = getPtrTinyBitmap();
         TinyBitmap t_bmp(&setPtrTinyBmp);
         const bool ret = t_bmp.containsRange(color_id_start, color_id_end - 1);
@@ -805,20 +819,30 @@ bool UnitigColors::contains(const UnitigMapBase& um, const size_t color_id) cons
 
     if (flag == localBitVector){
 
+        //cout << "UnitigColors::contains(" << um.dist << ", " << color_id << "): flag == localBitVector" << endl;
+        //cout << "color_id_start: " << color_id_start << ", color_id_end: " << color_id_end << ", maxBitVectorIDs: " << maxBitVectorIDs;
         if ((color_id_end - 1) < maxBitVectorIDs){
 
             uintptr_t setBits_tmp = setBits >> (color_id_start + shiftMaskBits);
+            //cout << ", setBits: " << setBits << ", shiftMaskBits: " << shiftMaskBits << ", setBits_tmp: " << setBits_tmp << endl;
 
             for (; color_id_start < color_id_end; ++color_id_start, setBits_tmp >>= 1){
 
                 if ((setBits_tmp & 0x1) == 0) return false;
             }
         }
-        else return false;
+        else {
+            //cout << endl;
+            return false;
+        }
     }
 
-    if (flag == localSingleInt) return (um.len == 1) && (color_id_start == (setBits >> shiftMaskBits));
+    if (flag == localSingleInt) {
+        //cout << "UnitigColors::contains(" << um.dist << ", " << color_id << "): flag == localSingleInt" << endl;
+        return (um.len == 1) && (color_id_start == (setBits >> shiftMaskBits));
+    }
 
+    //cout << "UnitigColors::contains(): returning true at end of method" << endl;
     return true;
 }
 

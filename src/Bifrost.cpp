@@ -580,17 +580,18 @@ int main(int argc, char **argv){
 
                     ccdbg.buildGraph(opt);
                     ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
+                    ccdbg.buildColors(opt);
 
                     bool ok = true;
                     if (opt.compress_tigs != Tigs::NONE) {
-                        ColoredCDBG<> helsitigged_ccdbg(opt.k, opt.g);
-                        ok = helsitigged_ccdbg.convert_tigs(ccdbg, opt.compress_tigs, opt.nb_threads,
+                        ColoredCDBG<> tigged_ccdbg(opt.k, opt.g);
+                        ok = tigged_ccdbg.convert_tigs(&ccdbg, opt.compress_tigs, opt.nb_threads,
                                                                  opt.prefixFilenameOut);
-                        ccdbg = move(helsitigged_ccdbg);
+                        //tigged_ccdbg.checkColors(ccdbg.getColorNames());
+                        ccdbg = move(tigged_ccdbg);
                     }
 
                     if (ok) {
-                        ccdbg.buildColors(opt);
                         ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.verbose);
                     }
                 }
@@ -603,13 +604,15 @@ int main(int argc, char **argv){
 
                     bool ok = true;
                     if (opt.compress_tigs != Tigs::NONE) {
-                        CompactedDBG<> helsitigged_cdbg(opt.k, opt.g);
-                        ok = helsitigged_cdbg.convert_tigs(cdbg, opt.compress_tigs, opt.nb_threads,
-                                                            opt.prefixFilenameOut);
-                        cdbg = move(helsitigged_cdbg);
+                        CompactedDBG<> tigged_cdbg(opt.k, opt.g);
+                        ok = tigged_cdbg.convert_tigs(&cdbg, opt.compress_tigs, opt.nb_threads,
+                                                      opt.prefixFilenameOut);
+                        cdbg = move(tigged_cdbg);
                     }
 
-                    cdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.outputGFA, opt.verbose);
+                    if (ok) {
+                        cdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.outputGFA, opt.verbose);
+                    }
                 }
             }
             else if (opt.update){
@@ -684,8 +687,9 @@ int main(int argc, char **argv){
                 cout << "Executing helsitests" << endl;
 
                 ColoredCDBG<> ccdbg(4, 2);
-                ccdbg.addUnitig("ACACAC", 0);
-                ccdbg.addUnitig("ACACAC", 1);
+                ccdbg.initialiseHashtable(20);
+                ccdbg.addUnitig("ACACACA", 0);
+                ccdbg.addUnitig("ACACACT", 1);
 
                 for (const auto& unitig : ccdbg) {
                     const string seq(unitig.referenceUnitigToString());
@@ -718,10 +722,16 @@ int main(int argc, char **argv){
                     }
                 }
 
-                /*ccdbg.buildGraph(opt);
-                ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
-                ccdbg.buildColors(opt);
-                ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.verbose);*/
+                {
+                    const auto unitigs = ccdbg.findAll(Kmer("ACAC"), false);cout << "Search results of ACACAG" << endl;
+                    cout << "findAll results of ACAC" << endl;
+                    for (const auto& entry : unitigs) {
+                        const string seq(entry.referenceUnitigToString());
+                        cout << "Hit in unitig " << seq << endl;
+                    }
+
+                    ccdbg.buildColors(opt);
+                }
 
                 cout << "Finished helsitests" << endl;
             }

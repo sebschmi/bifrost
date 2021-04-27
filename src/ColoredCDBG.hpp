@@ -343,8 +343,6 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
                     const double ratio_kmers, const bool inexact_search, const size_t nb_threads,
                     const bool verbose = false) const;
 
-    private:
-
         void checkColors(const vector<string>& filename_seq_in) const;
 
         void initUnitigColors(const CCDBG_Build_opt& opt, const size_t max_nb_hash = 31);
@@ -357,5 +355,6 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
 };
 
 #include "ColoredCDBG.tcc"
+#include "ColoredHelsitigs.tcc"
 
 #endif

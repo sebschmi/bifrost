@@ -1482,6 +1482,134 @@ UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const bool extremities_
 }
 
 template<typename U, typename G>
+vector<UnitigMap<U, G>> CompactedDBG<U, G>::findAll(const Kmer& km, const bool extremities_only) {
+
+    if (invalid){
+
+        cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << endl;
+        return vector<UnitigMap<U, G>>();
+    }
+
+    vector<UnitigMap<U, G>> result;
+    const Kmer km_twin = km.twin();
+    const Kmer& km_rep = km < km_twin ? km : km_twin;
+
+    bool isShort;
+
+    size_t unitig_id_pos, unitig_id, len;
+
+    int64_t pos_match;
+
+    const int diff = k_ - g_;
+
+    char km_tmp[MAX_KMER_SIZE];
+    km.toString(km_tmp); // Set k-mer to look-up in string version
+
+    minHashKmer<RepHash> it_min(km_tmp, k_, g_, RepHash(), true), it_min2, it_min_end;
+
+    while (it_min != it_min_end) {
+
+        int mhr_pos = it_min.getPosition();
+        Minimizer minz(Minimizer(km_tmp + mhr_pos).rep());
+        MinimizerIndex::const_iterator it = hmap_min_unitigs.find(minz);
+
+        it_min2 = it_min;
+
+        while (it != hmap_min_unitigs.end()) { // If the minimizer is found
+
+            const packed_tiny_vector& v = it.getVector();
+            const uint8_t flag_v = it.getVectorSize();
+            const int v_sz = v.size(flag_v);
+
+            it = hmap_min_unitigs.end();
+
+            for (size_t i = 0; i < v_sz; ++i){
+
+                unitig_id_pos = v(i, flag_v);
+                unitig_id = unitig_id_pos >> 32;
+
+                if (unitig_id == RESERVED_ID) {
+
+                    if ((unitig_id_pos & RESERVED_ID) != 0) { //This minimizer has abundant k-mers
+
+                        typename h_kmers_ccov_t::const_iterator it_km = h_kmers_ccov.find(km_rep);
+
+                        if (it_km != h_kmers_ccov.end()) result.push_back(UnitigMap<U, G>(it_km.getHash(), 0, 1, k_, false, true, km == km_rep, this));
+                    }
+
+                    if ((unitig_id_pos & MASK_CONTIG_TYPE) == MASK_CONTIG_TYPE) { //This minimizer is unitig overcrowded
+
+                        it_min2.getNewMin();
+
+                        if (it_min2 != it_min_end){
+
+                            minz = Minimizer(km_tmp + it_min2.getPosition()).rep();
+                            it = hmap_min_unitigs.find(minz);
+                        }
+                    }
+                }
+                else {
+
+                    isShort = (unitig_id_pos & MASK_CONTIG_TYPE) != 0;
+                    unitig_id_pos &= MASK_CONTIG_POS;
+
+                    if (isShort){
+
+                        if (((mhr_pos == unitig_id_pos) || (mhr_pos == diff - unitig_id_pos)) && (km_unitigs.getKmer(unitig_id) == km_rep)){
+
+                            result.push_back(UnitigMap<U, G>(unitig_id, 0, 1, k_, true, false, km == km_rep, this));
+                        }
+                    }
+                    else {
+
+                        if (unitig_id >= v_unitigs.size()) {
+                            cerr << "Unitig id " << unitig_id << " is out of bounds for v_unitigs of size " << v_unitigs.size() << endl;
+                            return vector<UnitigMap<U, G>>();
+                        }
+
+                        len = v_unitigs[unitig_id]->length() - k_;
+                        pos_match = unitig_id_pos - mhr_pos;
+
+                        if (extremities_only){
+
+                            if (((pos_match == 0) || (pos_match == len)) && v_unitigs[unitig_id]->getSeq().compareKmer(pos_match, k_, km)){
+
+                                result.push_back(UnitigMap<U, G>(unitig_id, pos_match, 1, len + k_, false, false, true, this));
+                            }
+
+                            pos_match = unitig_id_pos - diff + mhr_pos;
+
+                            if (((pos_match == 0) || (pos_match == len)) && v_unitigs[unitig_id]->getSeq().compareKmer(pos_match, k_, km_twin)){
+
+                                result.push_back(UnitigMap<U, G>(unitig_id, pos_match, 1, len + k_, false, false, false, this));
+                            }
+                        }
+                        else{
+
+                            if ((pos_match >= 0) && (pos_match <= len) && v_unitigs[unitig_id]->getSeq().compareKmer(pos_match, k_, km)){
+
+                                result.push_back(UnitigMap<U, G>(unitig_id, pos_match, 1, len + k_, false, false, true, this));
+                            }
+
+                            pos_match = unitig_id_pos - diff + mhr_pos;
+
+                            if ((pos_match >= 0) && (pos_match <= len) && v_unitigs[unitig_id]->getSeq().compareKmer(pos_match, k_, km_twin)){
+
+                                result.push_back(UnitigMap<U, G>(unitig_id, pos_match, 1, len + k_, false, false, false, this));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ++it_min;
+    }
+
+    return result;
+}
+
+template<typename U, typename G>
 vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& km, const bool extremities_only) const {
 
     const Kmer km_pred[4] = {km.backwardBase('A'), km.backwardBase('C'), km.backwardBase('G'), km.backwardBase('T')};
@@ -3918,7 +4046,7 @@ bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_uni
     for (int64_t last_pos_min = -1; it_min != it_min_end; ++it_min){
 
         //If current minimizer was not seen before
-        if ((last_pos_min < it_min.getPosition()) || isForbidden){
+        if ((last_pos_min < it_min.getPosition()) || isForbidden) {
 
             minHashResultIterator<RepHash> it_it_min = *it_min, it_it_min_end;
             isForbidden = false;

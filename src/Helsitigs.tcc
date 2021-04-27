@@ -12,22 +12,23 @@ extern "C" void helsitigs_build_graph(const size_t* unitig_weights);
 extern "C" void helsitigs_compute_tigs(size_t tig_algorithm, size_t threads, size_t k, const char* matching_file_prefix, ptrdiff_t* tigs_edge_out, size_t* tigs_insert_out, size_t* tigs_out_limits);
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G> dbg, const Tigs tigs, const size_t nb_threads, const string& matching_file_prefix) {
-    cout << "convert_tigs(dbg, tigs, nb_threads = " << nb_threads << ")" << endl;
+bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, const size_t nb_threads, const string& matching_file_prefix) {
+    /*cout << "convert_tigs(dbg, tigs, nb_threads = " << nb_threads << ")" << endl;
 
     cout << "given unitigs:" << endl;
     vector<string> unitigs;
-    for (const auto unitig : dbg) {
+    for (const auto unitig : *dbg) {
         const string seq(unitig.referenceUnitigToString());
         cout << seq << endl;
         unitigs.push_back(seq);
-    }
+    }*/
+    cout << "CompactedDBG::convert_tigs(): start" << endl;
 
     helsitigs_initialise(nb_threads);
-    helsitigs_initialise_graph(dbg.size());
+    helsitigs_initialise_graph(dbg->size());
     vector<size_t> unitig_weights;
 
-    for (const auto unitig : dbg) {
+    for (const auto unitig : *dbg) {
         for (const auto& successor: unitig.getSuccessors()) {
             helsitigs_merge_nodes(unitig.getIndex(), unitig.strand, successor.getIndex(), successor.strand);
         }
@@ -41,16 +42,25 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G> dbg, const Tigs tigs, c
 
     helsitigs_build_graph(unitig_weights.data());
 
-    vector<ptrdiff_t> tigs_edge_out(dbg.size() * 2, 0);
-    vector<size_t> tigs_insert_out(dbg.size() * 2, 0);
-    vector<size_t> tigs_out_limits(dbg.size(), 0);
+    vector<ptrdiff_t> tigs_edge_out(dbg->size() * 2, 0);
+    vector<size_t> tigs_insert_out(dbg->size() * 2, 0);
+    vector<size_t> tigs_out_limits(dbg->size(), 0);
     helsitigs_compute_tigs(tigs, nb_threads, k_, matching_file_prefix.c_str(), tigs_edge_out.data(), tigs_insert_out.data(), tigs_out_limits.data());
 
-    hmap_min_unitigs = MinimizerIndex(dbg.hmap_min_unitigs.sz());
+    hmap_min_unitigs = MinimizerIndex(dbg->hmap_min_unitigs.sz());
 
-    cout << "Quadratic reporting for hashtable of size " << dbg.getHashtableSize() << endl;
+    size_t nb_tigs = 0;
+    for (const auto limit : tigs_out_limits) {
+        if (limit != 0) {
+            nb_tigs ++;
+        } else {
+            break;
+        }
+    }
+
+    cout << "CompactedDBG::convert_tigs(): Quadratic reporting for hashtable of size " << dbg->getHashtableSize() << endl;
     size_t offset = 0;
-    auto unitig_iterator = dbg.begin();
+    auto unitig_iterator = dbg->begin();
     for (const auto limit : tigs_out_limits) {
         if (limit == 0) {
             break;
@@ -99,10 +109,35 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G> dbg, const Tigs tigs, c
 
         auto tiglen = tig.length();
         addUnitig(move(tig), (tiglen == k_) ? km_unitigs.size() : v_unitigs.size());
+        UnitigMap<U, G> um((tiglen == k_) ? km_unitigs.size() - 1 : v_unitigs.size() - 1, 0, tiglen - k_ + 1, tiglen, (tiglen == k_), false, true, this);
+
+        // Add colors
+        colorUnitig(dbg,
+                    um,
+                    tigs_edge_out.data() + offset,
+                    tigs_edge_out.data() + limit,
+                    tigs_insert_out.data() + offset,
+                    tigs_insert_out.data() + limit,
+                    nb_threads,
+                    offset == 0, nb_tigs);
+
         offset = limit;
     }
 
     return true;
+}
+
+template<typename U, typename G>
+void CompactedDBG<U, G>::colorUnitig(const CompactedDBG<U,G>* dbg,
+                                     const UnitigMap<U,G>& um,
+                                     const ptrdiff_t* tigs_edge_out_offset,
+                                     const ptrdiff_t* tigs_edge_out_limit,
+                                     const size_t* tigs_insert_out_offset,
+                                     const size_t* tigs_insert_out_limit,
+                                     const size_t nb_threads,
+                                     const bool initialise_data,
+                                     const size_t total_tigs) {
+    cout << "CompactedDBG::colorUnitig(): do nothing, since we are not colored" << endl;
 }
 
 #endif

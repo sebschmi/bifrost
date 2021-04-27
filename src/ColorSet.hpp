@@ -121,7 +121,7 @@ class UnitigColors {
                 */
                 bool operator!=(const UnitigColors_const_iterator& o) const;
 
-            private:
+            //private:
 
                 const UnitigColors* cs;
 
@@ -323,7 +323,7 @@ class UnitigColors {
 
         uint64_t hash(const size_t seed = 0) const;
 
-    private:
+    //private:
 
         UnitigColors(SharedUnitigColors& o);
         UnitigColors(const UnitigColors& o, const SharedUnitigColors* old_ref_uc, const SharedUnitigColors* new_ref_uc);
@@ -354,6 +354,10 @@ class UnitigColors {
             }
 
             setBits = localBitVector;
+        }
+
+        inline uintptr_t flag() {
+            return setBits & flagMask;
         }
 
         inline void shrinkSize(){

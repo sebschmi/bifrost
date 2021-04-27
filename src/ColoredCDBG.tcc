@@ -1,6 +1,8 @@
 #ifndef BIFROST_COLOREDCDBG_TCC
 #define BIFROST_COLOREDCDBG_TCC
 
+#include <limits>
+
 template<typename U>
 ColoredCDBG<U>::ColoredCDBG(int kmer_length) : CompactedDBG<DataAccessor<U>, DataStorage<U>>(kmer_length){
 
@@ -613,14 +615,6 @@ bool ColoredCDBG<U>::read(const string& input_graph_filename, const string& inpu
 
             for (auto& t : workers) t.join();
         }
-
-        // TODO output information about color vectors
-        if (verbose) {
-            const auto nb_colors = this->getNbColors();
-            std::cout << "There are " << nb_colors << " colors" << std::endl;
-
-            DataStorage<U>* ds = this->getData();
-        }
     }
 
     return valid_input_files;
@@ -890,6 +884,44 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
                         cs_locks[id_lock].clear(std::memory_order_release);
                     }
+
+                    /*
+                    vector<UnitigColorMap<U>> v_um = this->findAll(it_km->first);
+
+                    size_t increment = std::numeric_limits<size_t>::max();
+                    for (auto& um : v_um) {
+                        if (um.isEmpty) {
+                            cerr << "findAll returned empty UnitigMap" << endl;
+                            return;
+                        }
+
+                        if (um.strand || (um.dist != 0)){
+
+                            um.len = 1 + um.lcp(str_tmp, it_km->second + k_, um.strand ? um.dist + k_ : um.dist - 1, !um.strand);
+
+                            //if ((um.size != k_) && !um.strand) um.dist -= um.len - 1;
+                            um.dist -= (um.len - 1) & (static_cast<size_t>((um.size == k_) || um.strand) - 1);
+
+                            increment = min(increment, um.len - 1);
+                        } else {
+                            increment = 0;
+                        }
+
+                        const uint64_t id_lock = ds->getHash(um) % nb_locks;
+                        UnitigColors* uc = ds->getUnitigColors(um);
+
+                        while (cs_locks[id_lock].test_and_set(std::memory_order_acquire)); // Set the corresponding lock
+
+                        uc->add(um, col_buf[c_id]);
+                        //cout << "Setting color " << c_id << " for " << um.getIndex() << (um.strand ? "+" : "-") << "[" << um.dist << ", " << (um.dist + um.len) << "] = " << um.mappedSequenceToString() << endl;
+
+                        cs_locks[id_lock].clear(std::memory_order_release);
+                    }
+
+                    if (increment != std::numeric_limits<size_t>::max() && increment > 0) {
+                        it_km += increment;
+                    }
+                     */
                 }
 
                 str[i + curr_len] = saved_char;
@@ -1291,6 +1323,22 @@ vector<string> ColoredCDBG<U>::getColorNames() const {
     return this->getData()->color_names;
 }
 
+template<typename T>
+string ptr_to_str(const T* p, size_t len) {
+    stringstream ss;
+    ss << "[";
+
+    for (size_t i = 0; i < len; i++) {
+        if (i != 0) {
+            ss << ", ";
+        }
+        ss << p[i];
+    }
+
+    ss << "]";
+    return ss.str();
+}
+
 template<typename U>
 bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string& out_filename_prefix,
                             const double ratio_kmers, const bool inexact_search, const size_t nb_threads,
@@ -1373,9 +1421,14 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
         typename unordered_set<pair<size_t, pair<Kmer, size_t>>, hash_pair>::const_iterator it;
 
         for (const auto& p : v_um){
-
-            s_um.insert({p.first, {p.second.strand ? p.second.getUnitigHead() : p.second.getUnitigTail().twin(), p.second.dist}});
+            const pair<size_t, pair<Kmer, size_t>> value{p.first, {p.second.strand ? p.second.getUnitigHead() : p.second.getUnitigTail().twin(), p.second.dist}};
+            //if (verbose) cout << "ColoredCDBG::search(): inserting kmer (" << value.first << ", (" << value.second.first.toString() << ", " << value.second.second << "))" << endl;
+            s_um.insert(value);
         }
+
+        const size_t v_um_initial_size = v_um.size();
+        const size_t s_um_initial_size = s_um.size();
+        size_t repeated_kmers = 0;
 
         for (const auto& p : v_um){
 
@@ -1389,10 +1442,13 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
 
                 size_t pos_unitig = um.dist;
 
-                it = s_um.find({pos_query, {head, um.dist}});
+                const pair<size_t, pair<Kmer, size_t>> value{pos_query, {head, um.dist}};
+                //if (verbose) cout << "ColoredCDBG::search():  searching forwards kmer (" << value.first << ", (" << value.second.first.toString() << ", " << value.second.second << ")): ";
+                it = s_um.find(value);
 
                 if (it != s_um.end()) {
 
+                    size_t found_count = 1;
                     s_um.erase(it);
 
                     while ((pos_unitig + k) < um.size){
@@ -1408,8 +1464,11 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
                             ++(um.len);
 
                             s_um.erase(it);
+                            found_count++;
                         }
                     }
+
+                    //if (verbose) cout << "found " << found_count << endl;
 
                     const UnitigColors* uc = um.getData()->getUnitigColors(um);
 
@@ -1422,8 +1481,14 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
                     }
                     else {
 
-                        for (; it_uc != it_uc_end; ++it_uc) color_occ_u[it_uc.getColorID()] += 1;
+                        for (; it_uc != it_uc_end; ++it_uc) {
+                            //if (verbose) cout << "    incrementing color " << it_uc.getColorID() << endl;
+                            color_occ_u[it_uc.getColorID()] += 1;
+                        }
                     }
+                } else {
+                    //if (verbose) cout << "not found" << endl;
+                    repeated_kmers += 1;
                 }
             }
             else {
@@ -1431,10 +1496,13 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
                 const Kmer head = um.getUnitigTail().twin();
                 const size_t max_pos_um = um.dist + um.len - 1;
 
-                it = s_um.find({pos_query, {head, um.dist}});
+                const pair<size_t, pair<Kmer, size_t>> value{pos_query, {head, um.dist}};
+                //if (verbose) cout << "ColoredCDBG::search(): searching backwards kmer (" << value.first << ", (" << value.second.first.toString() << ", " << value.second.second << ")): ";
+                it = s_um.find(value);
 
                 if (it != s_um.end()) {
 
+                    size_t found_count = 1;
                     s_um.erase(it);
 
                     while (um.dist > 0){
@@ -1450,8 +1518,11 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
                             ++(um.len);
 
                             s_um.erase(it);
+                            found_count++;
                         }
                     }
+
+                    //if (verbose) cout << "found " << found_count << endl;
 
                     const UnitigColors* uc = um.getData()->getUnitigColors(um);
 
@@ -1464,8 +1535,14 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
                     }
                     else {
 
-                        for (; it_uc != it_uc_end; ++it_uc) color_occ_u[it_uc.getColorID()] += 1;
+                        for (; it_uc != it_uc_end; ++it_uc) {
+                            //if (verbose) cout << "    incrementing color " << it_uc.getColorID() << endl;
+                            color_occ_u[it_uc.getColorID()] += 1;
+                        }
                     }
+                } else {
+                    //if (verbose) cout << "not found" << endl;
+                    repeated_kmers += 1;
                 }
             }
         }
@@ -1474,6 +1551,9 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
 
             for (size_t i = 0; i < nb_colors; ++i) color_occ_u[i] = color_occ_r[i].cardinality();
         }
+
+        //if (verbose) cout << "ColoredCDBG::search(): s_um is empty in the end: " << (s_um.empty() ? "true" : "false") << endl;
+        //if (verbose) cout << "ColoredCDBG::search(): repeated kmers: " << repeated_kmers << ", initials sizes v_um - s_um: " << (v_um_initial_size - s_um_initial_size) << endl;
     };
 
     auto searchQuery = [&](const string& query, Roaring* color_occ_r, uint32_t* color_occ_u, const size_t nb_km_min){
@@ -1596,12 +1676,15 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
 
             for (auto& c : s) c &= 0xDF;
 
+            //if (verbose) cout << "ColoredCDBG::search(): querying " << query_name << " with " << nb_km_min << " min kmer hits and sequence " << s << endl;
+
+            std::memset(color_occ_u, 0, nb_colors * sizeof(uint32_t));
             searchQuery(s, color_occ_r, color_occ_u, nb_km_min);
+
+            //if (verbose) cout << "ColoredCDBG::search(): final color_occ_u: " << ptr_to_str(color_occ_u, nb_colors) << endl;
 
             // Output presence/absence for each color in the buffer, return if query is present in at least one color
             nb_queries_found += static_cast<size_t>(writeOut(query_name, strlen(query_name), color_occ_u, buffer_res, pos_buffer_out, nb_km_min));
-
-            std::memset(color_occ_u, 0, nb_colors * sizeof(uint32_t));
 
             if (inexact_search){
 
@@ -1751,6 +1834,10 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
     KmerHashTable<tiny_vector<size_t, 1>> km_h;
 
+    for (const auto& filename: filename_seq_in) {
+        cout << "ColoredCDBG::checkColors(): using file " << filename << endl;
+    }
+
     FastqFile FQ(filename_seq_in);
 
     while (FQ.read_next(s, file_id) >= 0){
@@ -1772,6 +1859,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
     FQ.close();
 
     cout << "ColoredCDBG::checkColors(): All k-mers in the hash table with their colors" << endl;
+    bool ok = true;
 
     for (typename KmerHashTable<tiny_vector<size_t, 1>>::const_iterator it_km = km_h.begin(), it_km_end = km_h.end(); it_km != it_km_end; ++it_km){
 
@@ -1785,6 +1873,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
         }
 
         const UnitigColors* cs = ucm.getData()->getUnitigColors(ucm);
+        //cout << "ColoredCDBG::checkColors(): UnitigColors is " << (void*) cs << ", Unitig data is " << (void*) ucm.getData() << ", UnitigMap cdbg is " << (void*) ucm.cdbg << ", pos_unitig: " << ucm.pos_unitig << endl;
 
         if (cs == nullptr){
 
@@ -1802,21 +1891,29 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
             if (color_pres_graph != color_pres_hasht){
 
-                cerr << "ColoredCDBG::checkColors(): Current color is " << i << ": " << filename_seq_in[i] << endl;
-                cerr << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " for color " << i << ": " << filename_seq_in[i] << endl;
-                cerr << "ColoredCDBG::checkColors(): Size unitig: " << ucm.size << endl;
-                cerr << "ColoredCDBG::checkColors(): Mapping position: " << ucm.dist << endl;
-                cerr << "ColoredCDBG::checkColors(): Mapping strand: " << ucm.strand << endl;
-                cerr << "ColoredCDBG::checkColors(): Present in graph: " << color_pres_graph << endl;
-                cerr << "ColoredCDBG::checkColors(): Present in hash table: " << color_pres_hasht << endl;
+                cout << "ColoredCDBG::checkColors(): Current color is " << i << ": " << filename_seq_in[i] << endl;
+                cout << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " for color " << i << ": " << filename_seq_in[i] << endl;
+                cout << "ColoredCDBG::checkColors(): Index unitig: " << ucm.getIndex() << endl;
+                cout << "ColoredCDBG::checkColors(): Size unitig: " << ucm.size << endl;
+                cout << "ColoredCDBG::checkColors(): Mapping position: " << ucm.dist << endl;
+                cout << "ColoredCDBG::checkColors(): Mapping strand: " << ucm.strand << endl;
+                cout << "ColoredCDBG::checkColors(): Mapping abundant: " << ucm.isAbundant << ", short: " << ucm.isShort << endl;
+                cout << "ColoredCDBG::checkColors(): Present in graph: " << color_pres_graph << endl;
+                cout << "ColoredCDBG::checkColors(): Present in hash table: " << color_pres_hasht << endl << endl;
 
-                exit(1);
+                ok = false;
+                //exit(1);
             }
         }
     }
 
-    cout << "ColoredCDBG::checkColors(): Checked all colors of all k-mers: everything is fine" << endl;
-    cout << "ColoredCDBG::checkColors(): Number of k-mers in the graph: " << km_h.size() << endl;
+    if (ok) {
+        cout << "ColoredCDBG::checkColors(): Checked all colors of all k-mers: everything is fine" << endl;
+        cout << "ColoredCDBG::checkColors(): Number of k-mers in the graph: " << km_h.size() << endl;
+    } else {
+        cout << "ColoredCDBG::checkColors(): Found errors" << endl;
+        exit(1);
+    }
 }
 
 #endif

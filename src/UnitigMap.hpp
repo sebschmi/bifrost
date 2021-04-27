@@ -272,8 +272,6 @@ class UnitigMap : public UnitigMapBase {
             }
         }
 
-    private:
-
         UnitigMap(size_t p_unitig, size_t i, size_t l, size_t sz, bool short_, bool abundance, bool strd, CompactedDBG_ptr_t cdbg_);
 
         neighborIterator<U, G, is_const> bw_begin() const;

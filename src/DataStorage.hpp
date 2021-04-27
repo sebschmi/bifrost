@@ -78,7 +78,11 @@ class DataStorage {
 
         void resize(const double growth = 0.1);
 
-    private:
+        inline size_t capacity() {
+            return sz_cs;
+        }
+
+    //private:
 
         void releaseMemory();
 
