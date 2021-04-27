@@ -30,7 +30,12 @@ else()
     message(FATAL_ERROR "zlib not found. Required for to output files")
 endif(ZLIB_FOUND)
 
-set(LIBRUST_HELSITIGS "${CMAKE_CURRENT_SOURCE_DIR}/../../helsitigs/rust_helsitigs/target/debug/librust_helsitigs.so")
+if (NOT DEFINED ENV{LIBRUST_HELSITIGS})
+	message(FATAL_ERROR "Environment variable LIBRUST_HELSITIGS not set. Must point to the respective library file of the rust_helsitigs crate.")
+endif()
+
+set(LIBRUST_HELSITIGS $ENV{LIBRUST_HELSITIGS})
+#set(LIBRUST_HELSITIGS "${CMAKE_CURRENT_SOURCE_DIR}/../../helsitigs/rust_helsitigs/target/debug/librust_helsitigs.so")
 if (EXISTS ${LIBRUST_HELSITIGS})
 else()
     message( FATAL_ERROR "Not found: ${LIBRUST_HELSITIGS}" )
