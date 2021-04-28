@@ -575,6 +575,7 @@ int main(int argc, char **argv){
             if (opt.build){ // Build the graph
 
                 if (opt.outputColors) {
+                    auto start_build = std::chrono::high_resolution_clock::now();
 
                     ColoredCDBG<> ccdbg(opt.k, opt.g);
 
@@ -582,13 +583,23 @@ int main(int argc, char **argv){
                     ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
                     ccdbg.buildColors(opt);
 
+                    auto stop_build = std::chrono::high_resolution_clock::now();
+                    double duration_build = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_build - start_build).count()) / 1e6;
+                    cout << "Took " << std::setprecision(3) << duration_build << "s for building dbg (input_filename = " << opt.filename_graph_in << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
+
                     bool ok = true;
                     if (opt.compress_tigs != Tigs::NONE) {
+                        auto start_tig = std::chrono::high_resolution_clock::now();
+
                         ColoredCDBG<> tigged_ccdbg(opt.k, opt.g);
                         ok = tigged_ccdbg.convert_tigs(&ccdbg, opt.compress_tigs, opt.nb_threads,
                                                                  opt.prefixFilenameOut);
                         //tigged_ccdbg.checkColors(ccdbg.getColorNames());
                         ccdbg = move(tigged_ccdbg);
+
+                        auto stop_tig = std::chrono::high_resolution_clock::now();
+                        double duration_tig = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_tig - start_tig).count()) / 1e6;
+                        cout << "Took " << std::setprecision(3) << duration_tig << "s for compressing tigs (input_filename = " << opt.filename_graph_in << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
                     }
 
                     if (ok) {
@@ -596,18 +607,28 @@ int main(int argc, char **argv){
                     }
                 }
                 else {
-
+                    auto start_build = std::chrono::high_resolution_clock::now();
                     CompactedDBG<> cdbg(opt.k, opt.g);
 
                     cdbg.build(opt);
                     cdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
 
+                    auto stop_build = std::chrono::high_resolution_clock::now();
+                    double duration_build = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_build - start_build).count()) / 1e6;
+                    cout << "Took " << std::setprecision(3) << duration_build << "s for building dbg (input_filename = " << opt.filename_graph_in << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
+
                     bool ok = true;
                     if (opt.compress_tigs != Tigs::NONE) {
+                        auto start_tig = std::chrono::high_resolution_clock::now();
+
                         CompactedDBG<> tigged_cdbg(opt.k, opt.g);
                         ok = tigged_cdbg.convert_tigs(&cdbg, opt.compress_tigs, opt.nb_threads,
                                                       opt.prefixFilenameOut);
                         cdbg = move(tigged_cdbg);
+
+                        auto stop_tig = std::chrono::high_resolution_clock::now();
+                        double duration_tig = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_tig - start_tig).count()) / 1e6;
+                        cout << "Took " << std::setprecision(3) << duration_tig << "s for compressing tigs (input_filename = " << opt.filename_graph_in << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
                     }
 
                     if (ok) {
@@ -661,27 +682,32 @@ int main(int argc, char **argv){
             else if (opt.query){
 
                 if (opt.filename_colors_in.size() != 0){
-
+                    auto start_read = std::chrono::high_resolution_clock::now();
                     ColoredCDBG<> ccdbg(opt.k, opt.g);
-
                     ccdbg.read(opt.filename_graph_in, opt.filename_colors_in, opt.nb_threads, opt.verbose);
+                    auto stop_read = std::chrono::high_resolution_clock::now();
+                    double duration_read = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_read - start_read).count()) / 1e6;
+                    cout << "Took " << std::setprecision(3) << duration_read << "s for reading dbg (input_filename = " << opt.filename_graph_in << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
+
+                    auto start_search = std::chrono::high_resolution_clock::now();
                     ccdbg.search(opt.filename_query_in, opt.prefixFilenameOut, opt.ratio_kmers, opt.inexact_search, opt.nb_threads, opt.verbose);
+                    auto stop_search = std::chrono::high_resolution_clock::now();
+                    double duration_search = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_search - start_search).count()) / 1e6;
+                    cout << "Took " << std::setprecision(3) << duration_search << "s for querying dbg (query_filenames = " << opt.filename_query_in << ", out_filename_prefix = " << opt.prefixFilenameOut << ", ratio_kmers = " << opt.ratio_kmers << ", inexact_search = " << opt.inexact_search << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
                 }
                 else {
-
-                    CompactedDBG<> cdbg(opt.k, opt.g);
-
                     auto start_read = std::chrono::high_resolution_clock::now();
+                    CompactedDBG<> cdbg(opt.k, opt.g);
                     cdbg.read(opt.filename_graph_in, opt.nb_threads, opt.verbose);
                     auto stop_read = std::chrono::high_resolution_clock::now();
-                    double duration_read = std::chrono::duration_cast<std::chrono::microseconds>(stop_read - start_read).count() / 1e6;
-                    cout << "Took " << std::setprecision(3) << duration_read << "s for CompactedDBG::read(input_filename = " << opt.filename_graph_in << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
+                    double duration_read = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_read - start_read).count()) / 1e6;
+                    cout << "Took " << std::setprecision(3) << duration_read << "s for reading dbg (input_filename = " << opt.filename_graph_in << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
 
                     auto start_search = std::chrono::high_resolution_clock::now();
                     cdbg.search(opt.filename_query_in, opt.prefixFilenameOut, opt.ratio_kmers, opt.inexact_search, opt.nb_threads, opt.verbose);
                     auto stop_search = std::chrono::high_resolution_clock::now();
-                    double duration_search = std::chrono::duration_cast<std::chrono::microseconds>(stop_search - start_search).count() / 1e6;
-                    cout << "Took " << std::setprecision(3) << duration_search << "s for CompactedDBG::search(query_filenames = " << opt.filename_query_in << ", out_filename_prefix = " << opt.prefixFilenameOut << ", ratio_kmers = " << opt.ratio_kmers << ", inexact_search = " << opt.inexact_search << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
+                    double duration_search = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_search - start_search).count()) / 1e6;
+                    cout << "Took " << std::setprecision(3) << duration_search << "s for querying dbg (query_filenames = " << opt.filename_query_in << ", out_filename_prefix = " << opt.prefixFilenameOut << ", ratio_kmers = " << opt.ratio_kmers << ", inexact_search = " << opt.inexact_search << ", nb_threads = " << opt.nb_threads << ", verbose = " << opt.verbose << ")" << std::endl;
                 }
             } else if (opt.helsitests) {
                 cout << "Executing helsitests" << endl;
