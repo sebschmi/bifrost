@@ -4,6 +4,7 @@
 #include <string>
 #include "Common.hpp"
 #include "Kmer.hpp"
+#include <vector>
 
 /** @file src/UnitigMap.hpp
 * UnitigMap type interface.
@@ -258,17 +259,36 @@ class UnitigMap : public UnitigMapBase {
         bool isCoverageFull() const;
         size_t getCoverage(const size_t pos) const;
 
-        inline size_t getIndex() const {
+        inline size_t getIndex(const vector<size_t>& h_kmers_ccov_ranks) const {
             auto v_unitigs_sz = cdbg->v_unitigs.size();
             auto v_kmers_sz = cdbg->km_unitigs.size();
             auto h_kmers_ccov_sz = cdbg->h_kmers_ccov.size();
 
             if (!isShort && !isAbundant) {
+                if (pos_unitig >= v_unitigs_sz) {
+                    cerr << "pos_unitig >= v_unitigs_sz: " << pos_unitig << " >= " << v_unitigs_sz << endl;
+                    exit(1);
+                }
+
                 return pos_unitig;
-            } else if (isShort) {
+            } else if (isShort && !isAbundant) {
+                if (pos_unitig >= v_kmers_sz) {
+                    cerr << "pos_unitig >= v_kmers_sz: " << pos_unitig << " >= " << v_kmers_sz << endl;
+                    exit(1);
+                }
+
                 return pos_unitig + v_unitigs_sz;
-            } else if (isAbundant) {
-                return pos_unitig + v_unitigs_sz + v_kmers_sz;
+            } else if (!isShort && isAbundant) {
+                auto rank = h_kmers_ccov_ranks[pos_unitig];
+                if (rank >= h_kmers_ccov_sz) {
+                    cerr << "rank >= h_kmers_ccov_sz: " << rank << " >= " << h_kmers_ccov_sz << endl;
+                    exit(1);
+                }
+
+                return rank + v_unitigs_sz + v_kmers_sz;
+            } else {
+                cerr << "UnitigMap is both short and abundant" << endl;
+                exit(1);
             }
         }
 

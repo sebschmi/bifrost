@@ -25,15 +25,20 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
     cout << "CompactedDBG::convert_tigs(): start" << endl;
 
     helsitigs_initialise(nb_threads);
+    cout << "dbg->size() = " << dbg->size() << endl;
     helsitigs_initialise_graph(dbg->size());
     vector<size_t> unitig_weights;
+    auto h_kmer_ccov_ranks = dbg->h_kmers_ccov.compute_rank_array();
 
     for (const auto unitig : *dbg) {
+        //cout << "unitig.getIndex() = " << unitig.getIndex(h_kmer_ccov_ranks) << endl;
         for (const auto& successor: unitig.getSuccessors()) {
-            helsitigs_merge_nodes(unitig.getIndex(), unitig.strand, successor.getIndex(), successor.strand);
+            //cout << "successor.getIndex() = " << successor.getIndex(h_kmer_ccov_ranks) << endl;
+            helsitigs_merge_nodes(unitig.getIndex(h_kmer_ccov_ranks), unitig.strand, successor.getIndex(h_kmer_ccov_ranks), successor.strand);
         }
         for (const auto& predecessor: unitig.getPredecessors()) {
-            helsitigs_merge_nodes(predecessor.getIndex(), predecessor.strand, unitig.getIndex(), unitig.strand);
+            //cout << "predecessor.getIndex() = " << predecessor.getIndex(h_kmer_ccov_ranks) << endl;
+            helsitigs_merge_nodes(predecessor.getIndex(h_kmer_ccov_ranks), predecessor.strand, unitig.getIndex(h_kmer_ccov_ranks), unitig.strand);
         }
 
         // len is length of the mapping in kmers
@@ -58,7 +63,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         }
     }
 
-    cout << "CompactedDBG::convert_tigs(): Quadratic reporting for hashtable of size " << dbg->getHashtableSize() << endl;
+    cout << "CompactedDBG::convert_tigs(): Quadratic reporting for hashtable with " << dbg->getHashtableSize() << " entries" << endl;
     size_t offset = 0;
     auto unitig_iterator = dbg->begin();
     for (const auto limit : tigs_out_limits) {
@@ -108,8 +113,10 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         }
 
         auto tiglen = tig.length();
-        addUnitig(move(tig), (tiglen == k_) ? km_unitigs.size() : v_unitigs.size());
-        UnitigMap<U, G> um((tiglen == k_) ? km_unitigs.size() - 1 : v_unitigs.size() - 1, 0, tiglen - k_ + 1, tiglen, (tiglen == k_), false, true, this);
+        auto tigid = (tiglen == k_) ? km_unitigs.size() : v_unitigs.size();
+        cout << "Adding tig of length " << tiglen << " with id " << tigid << endl;
+        addUnitig(move(tig), tigid);
+        UnitigMap<U, G> um(tigid, 0, tiglen - k_ + 1, tiglen, (tiglen == k_), false, true, this);
 
         // Add colors
         colorUnitig(dbg,

@@ -5,6 +5,7 @@
 #include <string>
 #include <iterator>
 #include <algorithm>
+#include <limits>
 
 #include "Kmer.hpp"
 
@@ -1107,6 +1108,28 @@ struct KmerHashTable {
     iterator end() { return iterator(this); }
 
     const_iterator end() const { return const_iterator(this); }
+
+    vector<size_t> compute_rank_array() const {
+        vector<size_t> result;
+        result.reserve(size_);
+
+        size_t rank = 0;
+        for (size_t i = 0; i < size_; i++) {
+            if (table_keys[i] == empty_key || table_keys[i] == deleted_key) {
+                result.push_back(numeric_limits<size_t>::max());
+            } else {
+                result.push_back(rank);
+                rank += 1;
+            }
+        }
+
+        if (size_ - num_empty != rank) {
+            cerr << "num_empty mismatches rank" << endl;
+            exit(1);
+        }
+
+        return result;
+    }
 };
 
 template<typename T>
