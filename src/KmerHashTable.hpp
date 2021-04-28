@@ -1113,17 +1113,21 @@ struct KmerHashTable {
         vector<size_t> result;
         result.reserve(size_);
 
+        size_t num_deleted = 0;
         size_t rank = 0;
         for (size_t i = 0; i < size_; i++) {
             if (table_keys[i] == empty_key || table_keys[i] == deleted_key) {
                 result.push_back(numeric_limits<size_t>::max());
+                if (table_keys[i] == deleted_key) {
+                    num_deleted += 1;
+                }
             } else {
                 result.push_back(rank);
                 rank += 1;
             }
         }
 
-        if (size_ - num_empty != rank) {
+        if (size_ - num_empty - num_deleted != rank) {
             cerr << "num_empty mismatches rank" << endl;
             exit(1);
         }
