@@ -26,6 +26,8 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
 
     helsitigs_initialise(nb_threads);
     cout << "dbg->size() = " << dbg->size() << endl;
+    cout << "dbg->v_unitigs.size() = " << dbg->v_unitigs.size() << endl;
+    cout << "dbg->km_unitigs.size() = " << dbg->km_unitigs.size() << endl;
     helsitigs_initialise_graph(dbg->size());
     vector<size_t> unitig_weights;
     auto h_kmer_ccov_ranks = dbg->h_kmers_ccov.compute_rank_array();
@@ -114,9 +116,29 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
 
         auto tiglen = tig.length();
         auto tigid = (tiglen == k_) ? km_unitigs.size() : v_unitigs.size();
-        cout << "Adding tig of length " << tiglen << " with id " << tigid << endl;
-        addUnitig(move(tig), tigid);
-        UnitigMap<U, G> um(tigid, 0, tiglen - k_ + 1, tiglen, (tiglen == k_), false, true, this);
+        //cout << "Adding tig of length " << tiglen << " with id " << tigid << endl;
+        bool isAbundant = addUnitig(tig, tigid);
+        if (isAbundant) {
+            auto km_rep = Kmer(tig.c_str()).rep();
+            auto it = h_kmers_ccov.find(km_rep);
+            if (it == h_kmers_ccov.end()) {
+                cout << "Insertion of " << km_rep.toString() << " somehow failed" << endl;
+            }
+            tigid = it.h;
+        }
+        UnitigMap<U, G> um(tigid, 0, tiglen - k_ + 1, tiglen, (tiglen == k_) && !isAbundant, isAbundant, true, this);
+        if (isAbundant) {
+            auto head_key = h_kmers_ccov.find(tigid);
+            if (head_key == h_kmers_ccov.end()) {
+                cout << "tigid is somehow wrong" << endl;
+            }
+            auto head = um.getMappedHead();
+        }
+
+        if (um.isEmpty) {
+            cerr << "um is empty" << endl;
+            exit(1);
+        }
 
         // Add colors
         colorUnitig(dbg,

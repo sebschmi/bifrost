@@ -4118,14 +4118,22 @@ bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_uni
         }
     }
 
-    if (isAbundant){
+    if (isAbundant) {
 
-        if (id_unitig == km_unitigs.size()) km_unitigs.push_back(km_rep);
-        else km_unitigs.set(id_unitig, km_rep);
+        if (id_unitig == km_unitigs.size()) {
+            //cout << "isAbundant km_unitigs.push_back(" << km_rep.toString() << ")" << endl;
+            km_unitigs.push_back(km_rep);
+        } else {
+            //cout << "isAbundant km_unitigs.set(" << id_unitig << ", " << km_rep.toString() << ")" << endl;
+            km_unitigs.set(id_unitig, km_rep);
+        }
 
         deleteUnitig_<is_void<U>::value>(true, false, id_unitig, false);
 
-        if (id_unitig == km_unitigs.size() - 1) km_unitigs.resize(km_unitigs.size() - 1);
+        if (id_unitig == km_unitigs.size() - 1) {
+            //cout << "isAbundant km_unitigs.resize(" << km_unitigs.size() - 1 << ")" << endl;
+            km_unitigs.resize(km_unitigs.size() - 1);
+        }
 
         it_min = minHashIterator<RepHash>(c_str, len, k_, g_, RepHash(), true);
 
@@ -4153,12 +4161,23 @@ bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_uni
             }
         }
 
-        h_kmers_ccov.insert(km_rep, CompressedCoverage_t<U>(1));
+        //cout << "isAbundant h_kmers_ccov.insert(" << km_rep.toString() << ", " << CompressedCoverage_t<U>(1).ccov.toString() << ")" << endl;
+        auto insertion_result = h_kmers_ccov.insert(km_rep, CompressedCoverage_t<U>(1));
+        /*cout << "iterator_valid = " << (insertion_result.first != h_kmers_ccov.end())
+             << ", hashtable_changed = " << insertion_result.second
+             << ", iterator_matches = " << (km_rep == insertion_result.first.getKey())
+             << ", kmer_found = " << (h_kmers_ccov.find(km_rep) != h_kmers_ccov.end())
+             << endl;*/
     }
-    else if (isShort){
+    else if (isShort) {
 
-        if (id_unitig == km_unitigs.size()) km_unitigs.push_back(km_rep);
-        else km_unitigs.set(id_unitig, km_rep);
+        if (id_unitig == km_unitigs.size()) {
+            //cout << "isShort km_unitigs.push_back(" << km_rep.toString() << ")" << endl;
+            km_unitigs.push_back(km_rep);
+        } else {
+            //cout << "isShort km_unitigs.set(" << id_unitig << ", " << km_rep.toString() << ")" << endl;
+            km_unitigs.set(id_unitig, km_rep);
+        }
     }
     else if (id_unitig == v_unitigs.size()) v_unitigs.push_back(new Unitig<U>(c_str)); //Push unitig to list of unitigs
     else v_unitigs[id_unitig] = new Unitig<U>(c_str);

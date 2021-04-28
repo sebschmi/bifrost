@@ -37,7 +37,10 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
     //cout << "UnitigColors is " << (void*) ds->getUnitigColors(um) << endl;
     size_t offset = 0;
 
-    *(um.getData()) = ds->insert(um).first;
+    auto data = ds->insert(um).first;
+    auto* um_data = um.getData();
+    //cout << "Got um_data = " << (void*) um_data << endl;
+    *(um_data) = data;
 
     //set<pair<pair<size_t, bool>, size_t>> inserted_colors;
 
