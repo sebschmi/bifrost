@@ -1826,7 +1826,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
 template<typename U>
 void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
-    cout << "ColoredCDBG::checkColors(): Start" << endl;
+    cout << "ColoredCDBG::checkColors(): Start for " << (void*) this << endl;
 
     size_t file_id = 0;
 
