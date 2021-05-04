@@ -1886,7 +1886,6 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
                         cout << "Color " << color << " mismatch at " << tmp_um << endl;
                         cout << (is_colored ? "Is colored but should not be" : "Should be colored but is not") << endl;
                         ok = false;
-                        exit(1);
                     }
                 }
             }
