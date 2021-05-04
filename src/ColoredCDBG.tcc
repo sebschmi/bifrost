@@ -1867,6 +1867,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
         if (unitig_mapping.getData()->getUnitigColors(unitig_mapping) == nullptr) {
             cout << "ColoredCDBG::checkColors(): Found unitig " << unitig_mapping.getIndex(h_kmers_ccov_ranks) << " without color data: " << unitig_mapping.referenceUnitigToString() << endl;
             ok = false;
+            exit(1);
         } else {
             const auto* uc = unitig_mapping.getData()->getUnitigColors(unitig_mapping);
             for (size_t position = 0; position < unitig_mapping.len; position++) {
@@ -1885,6 +1886,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
                         cout << "Color mismatch at " << tmp_um << endl;
                         cout << (is_colored ? "Is colored but should not be" : "Should be colored but is not") << endl;
                         ok = false;
+                        exit(1);
                     }
                 }
             }

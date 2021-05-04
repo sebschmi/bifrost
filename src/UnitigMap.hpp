@@ -323,7 +323,7 @@ basic_ostream<char>& operator<<(basic_ostream<char>& stream, const UnitigMap<Uni
     if (um.isEmpty) {
         stream << "UnitigMap[empty]";
     } else {
-        stream << "UnitigMap" << (um.strand ? "+" : "-") << "[" << um.dist << ", " << um.len << ", " << um.size << "] at " << (um.isShort ? "short " : um.isAbundant ? "abundant " : "") << um.pos_unitig << " of " << (void*) um.cdbg;
+        stream << "UnitigMap" << (um.strand ? "+" : "-") << "[" << um.getMappedHead().toString() << "][" << um.dist << "+" << um.len << "/" << um.size << "] at " << (um.isShort ? "short " : um.isAbundant ? "abundant " : "") << um.pos_unitig << " of " << (void*) um.cdbg;
     }
     return stream;
 }

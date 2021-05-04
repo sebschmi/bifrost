@@ -80,7 +80,8 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                     tmp_um.len = 1;
                     tmp_um.strand = !tmp_um.strand;
                 }
-                cout << "Writing color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.pos_unitig << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
+                //cout << "Writing color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.pos_unitig << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
+                cout << "Writing color " << color << " to " << tmp_um << endl;
                 //ds->getUnitigColors(tmp_um)->add(tmp_um, color);
                 //cout << "Before unitig colors: " << (void*) tmp_um.getData()->getUnitigColors(tmp_um) << ", Unitig data: " << (void*) tmp_um.getData() << ", UnitigMap cdbg: " << (void*) tmp_um.cdbg << ", pos_unitig: " << tmp_um.pos_unitig << ", flag = " << tmp_um.getData()->getUnitigColors(tmp_um)->flag() << endl;
                 tmp_um.getData()->getUnitigColors(tmp_um)->add(tmp_um, color);
