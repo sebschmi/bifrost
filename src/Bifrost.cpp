@@ -624,7 +624,6 @@ int main(int argc, char **argv){
                         CompactedDBG<> tigged_cdbg(opt.k, opt.g);
                         ok = tigged_cdbg.convert_tigs(&cdbg, opt.compress_tigs, opt.nb_threads,
                                                       opt.prefixFilenameOut);
-                        //tigged_ccdbg.checkColors(ccdbg.getColorNames());
                         cdbg = move(tigged_cdbg);
 
                         auto stop_tig = std::chrono::high_resolution_clock::now();
