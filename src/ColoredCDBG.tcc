@@ -1867,6 +1867,27 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
         if (unitig_mapping.getData()->getUnitigColors(unitig_mapping) == nullptr) {
             cout << "ColoredCDBG::checkColors(): Found unitig " << unitig_mapping.getIndex(h_kmers_ccov_ranks) << " without color data: " << unitig_mapping.referenceUnitigToString() << endl;
             ok = false;
+        } else {
+            const auto* uc = unitig_mapping.getData()->getUnitigColors(unitig_mapping);
+            for (size_t position = 0; position < unitig_mapping.len; position++) {
+                const auto kmer = unitig_mapping.getMappedKmer(position).rep();
+                auto tmp_um = unitig_mapping;
+                tmp_um.len = 1;
+                tmp_um.dist = position;
+                const auto km_h_kmer = km_h.find(kmer);
+                const tiny_vector<size_t, 1>& tv = *km_h_kmer;
+                const size_t tv_nb_max_elem = tv.size() * 64;
+                for (size_t color = 0; color < std::min(getNbColors(), tv_nb_max_elem); color++) {
+                    const auto is_colored = uc->contains(tmp_um, color);
+                    const bool should_be_colored = ((tv[color/64] >> (color%64)) & 0x1) == 0x1;
+
+                    if (is_colored != should_be_colored) {
+                        cout << "Color mismatch at " << tmp_um << endl;
+                        cout << (is_colored ? "Is colored but should not be" : "Should be colored but is not") << endl;
+                        ok = false;
+                    }
+                }
+            }
         }
     }
 
