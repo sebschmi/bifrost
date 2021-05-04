@@ -210,7 +210,8 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                             tmp_um.strand = !tmp_um.strand;
                         }
 
-                        cout << "Writing dummy color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.pos_unitig << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
+                        //cout << "Writing dummy color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.pos_unitig << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
+                        cout << "Writing dummy color " << color << " to " << tmp_um << endl;
                         tmp_um.getData()->getUnitigColors(tmp_um)->add(tmp_um, color);
                         //inserted_colors.insert({{tmp_um.dist, true}, color});
                         //inserted_colors.insert({{tmp_um.dist, false}, color});

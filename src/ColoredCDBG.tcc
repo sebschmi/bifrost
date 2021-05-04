@@ -1883,7 +1883,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
                     const bool should_be_colored = ((tv[color/64] >> (color%64)) & 0x1) == 0x1;
 
                     if (is_colored != should_be_colored) {
-                        cout << "Color mismatch at " << tmp_um << endl;
+                        cout << "Color " << color << " mismatch at " << tmp_um << endl;
                         cout << (is_colored ? "Is colored but should not be" : "Should be colored but is not") << endl;
                         ok = false;
                         exit(1);
