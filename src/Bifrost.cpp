@@ -592,8 +592,10 @@ int main(int argc, char **argv){
                         auto start_tig = std::chrono::high_resolution_clock::now();
 
                         ColoredCDBG<> tigged_ccdbg(opt.k, opt.g);
+                        ccdbg.checkColors(ccdbg.getColorNames());
                         ok = tigged_ccdbg.convert_tigs(&ccdbg, opt.compress_tigs, opt.nb_threads,
                                                                  opt.prefixFilenameOut);
+                        ccdbg.checkColors(ccdbg.getColorNames());
                         tigged_ccdbg.checkColors(ccdbg.getColorNames());
                         ccdbg = move(tigged_ccdbg);
 
