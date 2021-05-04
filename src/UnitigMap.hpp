@@ -318,6 +318,15 @@ class UnitigMap : public UnitigMapBase {
         CompactedDBG_ptr_t cdbg;
 };
 
+template<typename Unitig_data_t, typename Graph_data_t, bool is_const>
+basic_ostream<char>& operator<<(basic_ostream<char>& stream, UnitigMap<Unitig_data_t, Graph_data_t, is_const> um) {
+    if (um.isEmpty) {
+        stream << "UnitigMap[empty]";
+    } else {
+        stream << "UnitigMap" << (um.strand ? "+" : "-") << "[" << um.dist << ", " << um.len << ", " << um.size << "] at " << (um.isShort ? "short " : um.isAbundant ? "abundant " : "") << um.pos_unitig;
+    }
+}
+
 template<typename Unitig_data_t = void, typename Graph_data_t = void, bool is_const = false>
 struct UnitigMapHash {
 

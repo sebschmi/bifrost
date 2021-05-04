@@ -443,6 +443,26 @@ class UnitigColors {
             return reinterpret_cast<const SharedUnitigColors*>(setBits & pointerMask);
         }
 
+        inline void printFlag() const {
+            auto flag = setBits & flagMask;
+
+            if (flag == ptrUnitigColors) {
+                cout << "UnitigColors::flag: ptrUnitigColors";
+            } else if (flag == ptrSharedUnitigColors) {
+                cout << "UnitigColors::flag: ptrSharedUnitigColors";
+            } else if (flag == ptrBitmap) {
+                cout << "UnitigColors::flag: ptrBitmap";
+            } else if (flag == localTinyBitmap) {
+                cout << "UnitigColors::flag: localTinyBitmap";
+            } else if (flag == localSingleInt) {
+                cout << "UnitigColors::flag: localSingleInt";
+            } else if (flag == localBitVector) {
+                cout << "UnitigColors::flag: localBitVector";
+            } else {
+                cout << "UnitigColors::flag: unknown";
+            }
+        }
+
         static const size_t maxBitVectorIDs; // 64 bits - 3 bits for the color set type = 61
         static const size_t shiftMaskBits; // 3 bits
 

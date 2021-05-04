@@ -56,6 +56,14 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
             // process existing unitig
             // TODO process runs of colors at once
             const UnitigColors* unitig_colors = unitig_mapping.getData()->getUnitigColors(unitig_mapping);
+            if (unitig_colors == nullptr) {
+                cout << "Unitig has no colors" << endl;
+                exit(1);
+            }
+            cout << "New unitig colors: ";
+            unitig_colors->printFlag();
+            cout << endl;
+
             for (auto position_color = unitig_colors->begin(unitig_mapping); position_color != unitig_colors->end(); position_color++) {
                 const auto position = (*position_color).first;
                 const auto color = (*position_color).second;
@@ -69,7 +77,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                     tmp_um.len = 1;
                     tmp_um.strand = !tmp_um.strand;
                 }
-                //cout << "Writing color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.getIndex() << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
+                cout << "Writing color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.pos_unitig << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
                 //ds->getUnitigColors(tmp_um)->add(tmp_um, color);
                 //cout << "Before unitig colors: " << (void*) tmp_um.getData()->getUnitigColors(tmp_um) << ", Unitig data: " << (void*) tmp_um.getData() << ", UnitigMap cdbg: " << (void*) tmp_um.cdbg << ", pos_unitig: " << tmp_um.pos_unitig << ", flag = " << tmp_um.getData()->getUnitigColors(tmp_um)->flag() << endl;
                 tmp_um.getData()->getUnitigColors(tmp_um)->add(tmp_um, color);
@@ -125,12 +133,27 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
             // process dummy edge
             //cout << "Processing dummy edge" << endl;
 
+            if (insert >= k_) {
+                cout << "Insert size too large: " << insert << endl;
+                exit(1);
+            }
+
             for (size_t position = 0; position < insert; position++) {
                 const Kmer km = um.getMappedKmer(offset + position);
                 const const_UnitigColorMap<void> source_unitig_mapping = colored_dbg->find(km);
+                if (source_unitig_mapping.isEmpty) {
+                    cout << "Did not find kmer " << km.toString() << endl;
+                    exit(1);
+                }
 
                 for (size_t color = 0; color < colored_dbg->getNbColors(); color++) {
-                    if (source_unitig_mapping.getData()->getUnitigColors(source_unitig_mapping)->contains(source_unitig_mapping, color)) {
+                    const auto* source_unitig_colors = source_unitig_mapping.getData()->getUnitigColors(source_unitig_mapping);
+                    if (source_unitig_colors == nullptr) {
+                        cout << "Unitig has no colors: " << source_unitig_mapping << endl;
+                        exit(1);
+                    }
+
+                    if (source_unitig_colors->contains(source_unitig_mapping, color)) {
                         auto tmp_um = um;
                         if (edge >= 0) {
                             tmp_um.dist = offset + position;
@@ -141,7 +164,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                             tmp_um.strand = !tmp_um.strand;
                         }
 
-                        //cout << "Writing color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.getIndex() << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
+                        cout << "Writing dummy color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.pos_unitig << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
                         tmp_um.getData()->getUnitigColors(tmp_um)->add(tmp_um, color);
                         //inserted_colors.insert({{tmp_um.dist, true}, color});
                         //inserted_colors.insert({{tmp_um.dist, false}, color});

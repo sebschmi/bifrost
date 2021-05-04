@@ -22,6 +22,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         cout << seq << endl;
         unitigs.push_back(seq);
     }*/
+    const auto start_send = std::chrono::high_resolution_clock::now();
     cout << "CompactedDBG::convert_tigs(): start" << endl;
 
     helsitigs_initialise(nb_threads);
@@ -48,12 +49,20 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
     }
 
     helsitigs_build_graph(unitig_weights.data());
+    const auto stop_send = std::chrono::high_resolution_clock::now();
+    double duration_send = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_send - start_send).count()) / 1e6;
+    cout << "Took " << std::fixed << std::setprecision(3) << duration_send << "s to send topology to rust_helsitigs" << std::endl;
 
+    const auto start_compute = std::chrono::high_resolution_clock::now();
     vector<ptrdiff_t> tigs_edge_out(dbg->size() * 2, 0);
     vector<size_t> tigs_insert_out(dbg->size() * 2, 0);
     vector<size_t> tigs_out_limits(dbg->size(), 0);
     helsitigs_compute_tigs(tigs, nb_threads, k_, matching_file_prefix.c_str(), tigs_edge_out.data(), tigs_insert_out.data(), tigs_out_limits.data());
+    const auto stop_compute = std::chrono::high_resolution_clock::now();
+    const double duration_compute = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_compute - start_compute).count()) / 1e6;
+    cout << "Took " << std::fixed << std::setprecision(3) << duration_compute << "s to compute tigs in rust_helsitigs" << std::endl;
 
+    const auto start_receive = std::chrono::high_resolution_clock::now();
     hmap_min_unitigs = MinimizerIndex(dbg->hmap_min_unitigs.sz());
 
     size_t nb_tigs = 0;
@@ -67,6 +76,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
 
     cout << "CompactedDBG::convert_tigs(): Quadratic reporting for hashtable with " << dbg->getHashtableSize() << " entries" << endl;
     size_t offset = 0;
+    double duration_coloring = 0.0;
     auto unitig_iterator = dbg->begin();
     for (const auto limit : tigs_out_limits) {
         if (limit == 0) {
@@ -122,7 +132,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
             auto km_rep = Kmer(tig.c_str()).rep();
             auto it = h_kmers_ccov.find(km_rep);
             if (it == h_kmers_ccov.end()) {
-                cout << "Insertion of " << km_rep.toString() << " somehow failed" << endl;
+                cout << "Insertion of " << km_rep.toString() << " failed" << endl;
             }
             tigid = it.h;
         }
@@ -130,7 +140,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         if (isAbundant) {
             auto head_key = h_kmers_ccov.find(tigid);
             if (head_key == h_kmers_ccov.end()) {
-                cout << "tigid is somehow wrong" << endl;
+                cout << "tigid is wrong" << endl;
             }
             auto head = um.getMappedHead();
         }
@@ -141,6 +151,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         }
 
         // Add colors
+        const auto start_coloring = std::chrono::high_resolution_clock::now();
         colorUnitig(dbg,
                     um,
                     tigs_edge_out.data() + offset,
@@ -149,10 +160,19 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
                     tigs_insert_out.data() + limit,
                     nb_threads,
                     offset == 0, nb_tigs);
+        const auto stop_coloring = std::chrono::high_resolution_clock::now();
+        duration_coloring += ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_coloring - start_coloring).count()) / 1e6;
 
         offset = limit;
     }
 
+    const auto stop_receive = std::chrono::high_resolution_clock::now();
+    const double duration_receive = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_receive - start_receive).count()) / 1e6;
+    cout << "Took " << std::fixed << std::setprecision(3) << duration_receive << "s to receive tigs from rust_helsitigs" << std::endl;
+    cout << "Took " << std::fixed << std::setprecision(3) << duration_coloring << "s to transfer colors while receiving tigs from rust_helsitigs" << std::endl;
+
+
+    cout << "CompactedDBG::convert_tigs(): end" << endl;
     return true;
 }
 

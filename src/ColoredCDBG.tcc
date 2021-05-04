@@ -1105,7 +1105,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
     fp.close();
 
-    //checkColors(ds->color_names);
+    checkColors(ds->color_names);
 
     /*typedef std::unordered_map<uint64_t, pair<int64_t, size_t>> uc_unordered_map;
 
@@ -1861,6 +1861,15 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
     cout << "ColoredCDBG::checkColors(): All k-mers in the hash table with their colors" << endl;
     bool ok = true;
 
+    const auto h_kmers_ccov_ranks = this->h_kmers_ccov.compute_rank_array();
+
+    for (auto unitig_mapping: *this) {
+        if (unitig_mapping.getData()->getUnitigColors(unitig_mapping) == nullptr) {
+            cout << "ColoredCDBG::checkColors(): Found unitig " << unitig_mapping.getIndex(h_kmers_ccov_ranks) << " without color data: " << unitig_mapping.referenceUnitigToString() << endl;
+            ok = false;
+        }
+    }
+
     for (typename KmerHashTable<tiny_vector<size_t, 1>>::const_iterator it_km = km_h.begin(), it_km_end = km_h.end(); it_km != it_km_end; ++it_km){
 
         const Kmer km = it_km.getKey();
@@ -1893,7 +1902,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
                 cout << "ColoredCDBG::checkColors(): Current color is " << i << ": " << filename_seq_in[i] << endl;
                 cout << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " for color " << i << ": " << filename_seq_in[i] << endl;
-                cout << "ColoredCDBG::checkColors(): Index unitig: " << ucm.getIndex() << endl;
+                cout << "ColoredCDBG::checkColors(): Index unitig: " << ucm.getIndex(h_kmers_ccov_ranks) << ", pos_unitig: " << ucm.pos_unitig << endl;
                 cout << "ColoredCDBG::checkColors(): Size unitig: " << ucm.size << endl;
                 cout << "ColoredCDBG::checkColors(): Mapping position: " << ucm.dist << endl;
                 cout << "ColoredCDBG::checkColors(): Mapping strand: " << ucm.strand << endl;
@@ -1902,7 +1911,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
                 cout << "ColoredCDBG::checkColors(): Present in hash table: " << color_pres_hasht << endl << endl;
 
                 ok = false;
-                //exit(1);
+                exit(1);
             }
         }
     }
