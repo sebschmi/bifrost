@@ -194,7 +194,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
             offset += unitig_mapping.len;
         } else {
             // process dummy edge
-            cout << "Processing dummy edge" << endl;
+            cout << "Processing dummy edge with insert " << insert << endl;
 
             if (insert >= k_) {
                 cout << "Insert size too large: " << insert << endl;
