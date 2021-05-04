@@ -325,6 +325,7 @@ basic_ostream<char>& operator<<(basic_ostream<char>& stream, UnitigMap<Unitig_da
     } else {
         stream << "UnitigMap" << (um.strand ? "+" : "-") << "[" << um.dist << ", " << um.len << ", " << um.size << "] at " << (um.isShort ? "short " : um.isAbundant ? "abundant " : "") << um.pos_unitig;
     }
+    return stream;
 }
 
 template<typename Unitig_data_t = void, typename Graph_data_t = void, bool is_const = false>
