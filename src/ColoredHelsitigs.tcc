@@ -176,7 +176,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
         }
     }
 
-    um.getData()->getUnitigColors(um)->optimizeFullColors(um);
+    //um.getData()->getUnitigColors(um)->optimizeFullColors(um);
 }
 
 #endif
