@@ -44,6 +44,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
     *(um_data) = data;
 
     set<pair<size_t, size_t>> inserted_colors;
+    vector<bool> colors_found;
 
     for (; tig_edge < tigs_edge_out_limit && tig_insert < tigs_insert_out_limit; tig_edge++, tig_insert++) {
         auto edge = *tig_edge;
@@ -67,6 +68,8 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
             cout << "Source mapping: " << unitig_mapping << "\n";
 
             inserted_colors.clear();
+            colors_found.clear();
+            colors_found.insert(colors_found.begin(), unitig_mapping.len, false);
 
             for (auto position_color = unitig_colors->begin(unitig_mapping); position_color != unitig_colors->end(); position_color++) {
                 const auto position = (*position_color).first;
@@ -89,6 +92,12 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                 //cout << " After unitig colors: " << (void*) tmp_um.getData()->getUnitigColors(tmp_um) << ", Unitig data: " << (void*) tmp_um.getData() << ", UnitigMap cdbg: " << (void*) tmp_um.cdbg << ", pos_unitig: " << tmp_um.pos_unitig << ", flag = " << tmp_um.getData()->getUnitigColors(tmp_um)->flag() << endl;
                 inserted_colors.insert({position, color});
                 //inserted_colors.insert({{tmp_um.dist, false}, color});
+
+                if (position >= colors_found.size()) {
+                    cout << "Found position after end of source unitig" << endl;
+                    exit(1);
+                }
+                colors_found[position] = true;
 
                 /*if (!ds->getUnitigColors(tmp_um)->contains(tmp_um, color)) {
                     cout << "Writing color failed" << endl;
@@ -175,15 +184,25 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                 }
             }
 
+            for (const auto color_found : colors_found) {
+                if (!color_found) {
+                    cout << "Did not find all colors" << endl;
+                    exit(1);
+                }
+            }
+
             offset += unitig_mapping.len;
         } else {
             // process dummy edge
-            //cout << "Processing dummy edge" << endl;
+            cout << "Processing dummy edge" << endl;
 
             if (insert >= k_) {
                 cout << "Insert size too large: " << insert << endl;
                 exit(1);
             }
+
+            colors_found.clear();
+            colors_found.insert(colors_found.begin(), insert, false);
 
             for (size_t position = 0; position < insert; position++) {
                 const Kmer km = um.getMappedKmer(offset + position);
@@ -216,7 +235,15 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                         tmp_um.getData()->getUnitigColors(tmp_um)->add(tmp_um, color);
                         //inserted_colors.insert({{tmp_um.dist, true}, color});
                         //inserted_colors.insert({{tmp_um.dist, false}, color});
+                        colors_found[position] = true;
                     }
+                }
+            }
+
+            for (const auto color_found : colors_found) {
+                if (!color_found) {
+                    cout << "Did not find all colors" << endl;
+                    exit(1);
                 }
             }
 
