@@ -1,7 +1,7 @@
 #ifndef BIFROST_COLORED_HELSITIGS_TCC
 #define BIFROST_COLORED_HELSITIGS_TCC
 
-//#include<set>
+#include<set>
 
 template<>
 void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const CompactedDBG<DataAccessor<void>,DataStorage<void>>* dbg,
@@ -42,7 +42,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
     //cout << "Got um_data = " << (void*) um_data << endl;
     *(um_data) = data;
 
-    //set<pair<pair<size_t, bool>, size_t>> inserted_colors;
+    set<pair<size_t, size_t>> inserted_colors;
 
     for (; tig_edge < tigs_edge_out_limit && tig_insert < tigs_insert_out_limit; tig_edge++, tig_insert++) {
         auto edge = *tig_edge;
@@ -65,6 +65,8 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
             cout << "\n";
             cout << "Source mapping: " << unitig_mapping << "\n";
 
+            inserted_colors.clear();
+
             for (auto position_color = unitig_colors->begin(unitig_mapping); position_color != unitig_colors->end(); position_color++) {
                 const auto position = (*position_color).first;
                 const auto color = (*position_color).second;
@@ -83,7 +85,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                 //cout << "Before unitig colors: " << (void*) tmp_um.getData()->getUnitigColors(tmp_um) << ", Unitig data: " << (void*) tmp_um.getData() << ", UnitigMap cdbg: " << (void*) tmp_um.cdbg << ", pos_unitig: " << tmp_um.pos_unitig << ", flag = " << tmp_um.getData()->getUnitigColors(tmp_um)->flag() << endl;
                 tmp_um.getData()->getUnitigColors(tmp_um)->add(tmp_um, color);
                 //cout << " After unitig colors: " << (void*) tmp_um.getData()->getUnitigColors(tmp_um) << ", Unitig data: " << (void*) tmp_um.getData() << ", UnitigMap cdbg: " << (void*) tmp_um.cdbg << ", pos_unitig: " << tmp_um.pos_unitig << ", flag = " << tmp_um.getData()->getUnitigColors(tmp_um)->flag() << endl;
-                //inserted_colors.insert({{tmp_um.dist, true}, color});
+                inserted_colors.insert({position, color});
                 //inserted_colors.insert({{tmp_um.dist, false}, color});
 
                 /*if (!ds->getUnitigColors(tmp_um)->contains(tmp_um, color)) {
@@ -127,6 +129,22 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                         exit(1);
                     }
                 }*/
+            }
+
+            for (size_t position = 0; position < unitig_mapping.len; position++) {
+                for (size_t color = 0; color < colored_dbg->getNbColors(); color++) {
+                    auto tmp_um = unitig_mapping;
+                    tmp_um.dist = position;
+                    tmp_um.len = 1;
+                    auto exists = unitig_colors->contains(tmp_um, color);
+                    auto inserted = inserted_colors.find({position, color}) != inserted_colors.end();
+
+                    if (exists != inserted) {
+                        cout << "Found mismatch between inserted and existing colors" << endl;
+                        cout << "Position: " << position << ", color: " << color << (exists ? " exists but was not inserted" : " was inserted but does not exist") << endl;
+                        exit(1);
+                    }
+                }
             }
 
             offset += unitig_mapping.len;
