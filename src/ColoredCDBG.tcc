@@ -1876,6 +1876,12 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
                 tmp_um.len = 1;
                 tmp_um.dist = position;
                 const auto km_h_kmer = km_h.find(kmer);
+                if (km_h_kmer == km_h.end()) {
+                    cout << "Did not find kmer representative " << kmer.toString() << endl;
+                    ok = false;
+                    exit(1);
+                }
+
                 const tiny_vector<size_t, 1>& tv = *km_h_kmer;
                 const size_t tv_nb_max_elem = tv.size() * 64;
                 for (size_t color = 0; color < std::min(getNbColors(), tv_nb_max_elem); color++) {
