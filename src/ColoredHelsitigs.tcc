@@ -62,7 +62,8 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
             }
             cout << "New unitig colors: ";
             unitig_colors->printFlag();
-            cout << endl;
+            cout << "\n";
+            cout << "Source mapping: " << unitig_mapping << "\n";
 
             for (auto position_color = unitig_colors->begin(unitig_mapping); position_color != unitig_colors->end(); position_color++) {
                 const auto position = (*position_color).first;
