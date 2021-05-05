@@ -83,7 +83,12 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                     tmp_um.dist = offset + position;
                     tmp_um.len = 1;
                 } else {
-                    tmp_um.dist = offset + position;
+                    tmp_um.dist = tmp_um.len - 1 - (offset + position);
+                    if (tmp_um.dist >= tmp_um.len) {
+                        cout << "Wrong dist " << tmp_um.dist << " >= " << tmp_um.len << endl;
+                        exit(1);
+                    }
+
                     tmp_um.len = 1;
                     tmp_um.strand = !tmp_um.strand;
                 }
@@ -189,12 +194,12 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                     }
 
                     if (color == 1 && (!exists || !inserted || !really_exists) && (current_kmer == misses_color1 || current_kmer_twin == misses_color1)) {
-                        cout << "Kmer that typically misses color 3 was found at source " << unitig_mapping << endl;
+                        cout << "Kmer that typically misses color 1 was found at source " << unitig_mapping << endl;
                         cout << "Coloring exists: " << exists << ", really exists: " << really_exists << " and inserted: " << inserted << endl;
                     }
 
                     if (color == 1 && (!exists || !inserted || !really_exists) && (current_kmer == has_wrong_color1 || current_kmer_twin == has_wrong_color1)) {
-                        cout << "Kmer that typically has wrong color 3 was found at source " << unitig_mapping << endl;
+                        cout << "Kmer that typically has wrong color 1 was found at source " << unitig_mapping << endl;
                         cout << "Coloring exists: " << exists << ", really exists: " << really_exists << " and inserted: " << inserted << endl;
                     }
                 }
