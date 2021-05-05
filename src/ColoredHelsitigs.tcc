@@ -43,11 +43,11 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
     //cout << "Got um_data = " << (void*) um_data << endl;
     *(um_data) = data;
 
-    const Kmer has_wrong_color1("GATGGAATCCGGATCGGTAACGGTCATACCG");
-    const Kmer misses_color1("GACCGCCTTGTCGCCGTCGATCTGAATGCCG");
+    //const Kmer has_wrong_color1("GATGGAATCCGGATCGGTAACGGTCATACCG");
+    //const Kmer misses_color1("GACCGCCTTGTCGCCGTCGATCTGAATGCCG");
 
-    set<pair<size_t, size_t>> inserted_colors;
-    vector<bool> colors_found;
+    //set<pair<size_t, size_t>> inserted_colors;
+    //vector<bool> colors_found;
 
     for (; tig_edge < tigs_edge_out_limit && tig_insert < tigs_insert_out_limit; tig_edge++, tig_insert++) {
         auto edge = *tig_edge;
@@ -65,14 +65,14 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                 cout << "Unitig has no colors" << endl;
                 exit(1);
             }
-            cout << "New source unitig colors at " << (void*) unitig_colors << ": ";
+            /*cout << "New source unitig colors at " << (void*) unitig_colors << ": ";
             unitig_colors->printFlag();
             cout << "\n";
-            cout << "Source mapping: " << unitig_mapping << "\n";
+            cout << "Source mapping: " << unitig_mapping << "\n";*/
 
-            inserted_colors.clear();
-            colors_found.clear();
-            colors_found.insert(colors_found.begin(), unitig_mapping.len, false);
+            //inserted_colors.clear();
+            //colors_found.clear();
+            //colors_found.insert(colors_found.begin(), unitig_mapping.len, false);
 
             for (auto position_color = unitig_colors->begin(unitig_mapping); position_color != unitig_colors->end(); position_color++) {
                 const auto position = (*position_color).first;
@@ -83,9 +83,10 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                     tmp_um.dist = offset + position;
                     tmp_um.len = 1;
                 } else {
+                    // Here we need to reverse the indices of the colors as we are copying from a reverse complemented unitig
                     tmp_um.dist = offset + unitig_mapping.len - 1 - position;
-                    if (tmp_um.dist >= tmp_um.len) {
-                        cout << "Wrong dist " << tmp_um.dist << " >= " << tmp_um.len << endl;
+                    if (tmp_um.dist >= tmp_um.len || tmp_um.dist < offset) {
+                        cout << "Wrong dist: " << tmp_um.dist << ", len: " << tmp_um.len << ", offset: " << offset << endl;
                         exit(1);
                     }
 
@@ -93,19 +94,19 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                     tmp_um.strand = !tmp_um.strand;
                 }
                 //cout << "Writing color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.pos_unitig << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
-                cout << "Writing color " << color << " to " << tmp_um << endl;
+                //cout << "Writing color " << color << " to " << tmp_um << endl;
                 //ds->getUnitigColors(tmp_um)->add(tmp_um, color);
                 //cout << "Before unitig colors: " << (void*) tmp_um.getData()->getUnitigColors(tmp_um) << ", Unitig data: " << (void*) tmp_um.getData() << ", UnitigMap cdbg: " << (void*) tmp_um.cdbg << ", pos_unitig: " << tmp_um.pos_unitig << ", flag = " << tmp_um.getData()->getUnitigColors(tmp_um)->flag() << endl;
                 tmp_um.getData()->getUnitigColors(tmp_um)->add(tmp_um, color);
                 //cout << " After unitig colors: " << (void*) tmp_um.getData()->getUnitigColors(tmp_um) << ", Unitig data: " << (void*) tmp_um.getData() << ", UnitigMap cdbg: " << (void*) tmp_um.cdbg << ", pos_unitig: " << tmp_um.pos_unitig << ", flag = " << tmp_um.getData()->getUnitigColors(tmp_um)->flag() << endl;
-                inserted_colors.insert({position, color});
+                //inserted_colors.insert({position, color});
                 //inserted_colors.insert({{tmp_um.dist, false}, color});
 
-                if (position >= colors_found.size()) {
+                /*if (position >= colors_found.size()) {
                     cout << "Found position after end of source unitig" << endl;
                     exit(1);
                 }
-                colors_found[position] = true;
+                colors_found[position] = true;*/
 
                 /*if (!ds->getUnitigColors(tmp_um)->contains(tmp_um, color)) {
                     cout << "Writing color failed" << endl;
@@ -150,10 +151,10 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                 }*/
             }
 
-            for (size_t position = 0; position < unitig_mapping.len; position++) {
+            /*for (size_t position = 0; position < unitig_mapping.len; position++) {
                 for (size_t color = 0; color < colored_dbg->getNbColors(); color++) {
                     auto tmp_um = unitig_mapping;
-                    tmp_um.dist = position;
+                    tmp_um.dist = offset + unitig_mapping.len - 1 - position;
                     tmp_um.len = 1;
                     auto exists = unitig_colors->contains(tmp_um, color);
                     auto inserted = inserted_colors.find({position, color}) != inserted_colors.end();
@@ -203,14 +204,14 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                         cout << "Coloring exists: " << exists << ", really exists: " << really_exists << " and inserted: " << inserted << endl;
                     }
                 }
-            }
+            }*/
 
-            for (const auto color_found : colors_found) {
+            /*for (const auto color_found : colors_found) {
                 if (!color_found) {
                     cout << "Did not find all colors" << endl;
                     exit(1);
                 }
-            }
+            }*/
 
             offset += unitig_mapping.len;
         } else {
@@ -222,8 +223,8 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                 exit(1);
             }
 
-            colors_found.clear();
-            colors_found.insert(colors_found.begin(), insert, false);
+            //colors_found.clear();
+            //colors_found.insert(colors_found.begin(), insert, false);
 
             for (size_t position = 0; position < insert; position++) {
                 const Kmer km = um.getMappedKmer(offset + position);
@@ -246,27 +247,28 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                             tmp_um.dist = offset + position;
                             tmp_um.len = 1;
                         } else {
+                            // Here we do not reverse complement the indices, as we are not copying from a unitig but using the find function
                             tmp_um.dist = offset + position;
                             tmp_um.len = 1;
                             tmp_um.strand = !tmp_um.strand;
                         }
 
                         //cout << "Writing dummy color " << color << " to strand " << tmp_um.strand << " of " << tmp_um.pos_unitig << (tmp_um.isAbundant ? "a" : "") << (tmp_um.isShort ? "s" : "") << "[" << tmp_um.dist << "/" << tmp_um.size << "] = " << tmp_um.getMappedHead().toString() << endl;
-                        cout << "Writing dummy color " << color << " to " << tmp_um << endl;
+                        //cout << "Writing dummy color " << color << " to " << tmp_um << endl;
                         tmp_um.getData()->getUnitigColors(tmp_um)->add(tmp_um, color);
                         //inserted_colors.insert({{tmp_um.dist, true}, color});
                         //inserted_colors.insert({{tmp_um.dist, false}, color});
-                        colors_found[position] = true;
+                        //colors_found[position] = true;
                     }
                 }
             }
 
-            for (const auto color_found : colors_found) {
+            /*for (const auto color_found : colors_found) {
                 if (!color_found) {
                     cout << "Did not find all colors" << endl;
                     exit(1);
                 }
-            }
+            }*/
 
             offset += insert;
         }
