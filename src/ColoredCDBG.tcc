@@ -1105,7 +1105,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
     fp.close();
 
-    checkColors(ds->color_names);
+    //checkColors(ds->color_names);
 
     /*typedef std::unordered_map<uint64_t, pair<int64_t, size_t>> uc_unordered_map;
 
