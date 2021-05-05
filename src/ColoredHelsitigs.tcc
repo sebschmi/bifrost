@@ -43,6 +43,9 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
     //cout << "Got um_data = " << (void*) um_data << endl;
     *(um_data) = data;
 
+    const Kmer has_wrong_color3("CCATTCGATGAGAGCGGTTTTTTTAATTACT");
+    const Kmer misses_color3("CGGTTTTTTTAATTACTGCTTAAATGCACCC");
+
     set<pair<size_t, size_t>> inserted_colors;
     vector<bool> colors_found;
 
@@ -62,7 +65,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                 cout << "Unitig has no colors" << endl;
                 exit(1);
             }
-            cout << "New unitig colors: ";
+            cout << "New source unitig colors at " << (void*) unitig_colors << ": ";
             unitig_colors->printFlag();
             cout << "\n";
             cout << "Source mapping: " << unitig_mapping << "\n";
@@ -150,7 +153,10 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                     auto exists = unitig_colors->contains(tmp_um, color);
                     auto inserted = inserted_colors.find({position, color}) != inserted_colors.end();
 
-                    const auto kmer_hits = colored_dbg->searchSequence(tmp_um.getMappedHead().toString(), true, false, false, false);
+                    const auto current_kmer = tmp_um.getMappedHead();
+                    const auto current_kmer_twin = current_kmer.twin();
+
+                    const auto kmer_hits = colored_dbg->searchSequence(current_kmer.toString(), true, false, false, false);
                     if (kmer_hits.empty()) {
                         cout << "Did not find kmer in source dbg" << endl;
                         exit(1);
@@ -180,6 +186,16 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                         cout << "Found mismatch between inserted and existing colors between different data accesses" << endl;
                         cout << "Position: " << position << ", color: " << color << (exists ? " exists but cannot be found by query" : " can be found by query but not by our local access") << endl;
                         exit(1);
+                    }
+
+                    if (color == 3 && (!exists || !inserted || !really_exists) && (current_kmer == misses_color3 || current_kmer_twin == misses_color3)) {
+                        cout << "Kmer that typically misses color 3 was found at source " << unitig_mapping << endl;
+                        cout << "Coloring exists: " << exists << ", really exists: " << really_exists << " and inserted: " << inserted << endl;
+                    }
+
+                    if (color == 3 && (!exists || !inserted || !really_exists) && (current_kmer == has_wrong_color3 || current_kmer_twin == has_wrong_color3)) {
+                        cout << "Kmer that typically has wrong color 3 was found at source " << unitig_mapping << endl;
+                        cout << "Coloring exists: " << exists << ", really exists: " << really_exists << " and inserted: " << inserted << endl;
                     }
                 }
             }
@@ -249,6 +265,11 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
 
             offset += insert;
         }
+    }
+
+    if (offset != um.len) {
+        cout << "Final offset does not match um.len: " << offset << " != " << um.len << endl;
+        exit(1);
     }
 
     //um.getData()->getUnitigColors(um)->optimizeFullColors(um);

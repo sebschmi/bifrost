@@ -1870,6 +1870,8 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
             exit(1);
         } else {
             const auto* uc = unitig_mapping.getData()->getUnitigColors(unitig_mapping);
+            cout << "Unitig mapping " << unitig_mapping << " has color set " << (void*) uc << endl;
+
             for (size_t position = 0; position < unitig_mapping.len; position++) {
                 const auto kmer = unitig_mapping.getMappedKmer(position).rep();
                 auto tmp_um = unitig_mapping;
