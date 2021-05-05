@@ -83,7 +83,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                     tmp_um.dist = offset + position;
                     tmp_um.len = 1;
                 } else {
-                    tmp_um.dist = tmp_um.len - 1 - (offset + position);
+                    tmp_um.dist = offset + unitig_mapping.len - 1 - position;
                     if (tmp_um.dist >= tmp_um.len) {
                         cout << "Wrong dist " << tmp_um.dist << " >= " << tmp_um.len << endl;
                         exit(1);
