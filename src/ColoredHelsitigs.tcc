@@ -43,8 +43,8 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
     //cout << "Got um_data = " << (void*) um_data << endl;
     *(um_data) = data;
 
-    const Kmer has_wrong_color3("CCATTCGATGAGAGCGGTTTTTTTAATTACT");
-    const Kmer misses_color3("CGGTTTTTTTAATTACTGCTTAAATGCACCC");
+    const Kmer has_wrong_color1("GATGGAATCCGGATCGGTAACGGTCATACCG");
+    const Kmer misses_color1("GACCGCCTTGTCGCCGTCGATCTGAATGCCG");
 
     set<pair<size_t, size_t>> inserted_colors;
     vector<bool> colors_found;
@@ -188,12 +188,12 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
                         exit(1);
                     }
 
-                    if (color == 3 && (!exists || !inserted || !really_exists) && (current_kmer == misses_color3 || current_kmer_twin == misses_color3)) {
+                    if (color == 1 && (!exists || !inserted || !really_exists) && (current_kmer == misses_color1 || current_kmer_twin == misses_color1)) {
                         cout << "Kmer that typically misses color 3 was found at source " << unitig_mapping << endl;
                         cout << "Coloring exists: " << exists << ", really exists: " << really_exists << " and inserted: " << inserted << endl;
                     }
 
-                    if (color == 3 && (!exists || !inserted || !really_exists) && (current_kmer == has_wrong_color3 || current_kmer_twin == has_wrong_color3)) {
+                    if (color == 1 && (!exists || !inserted || !really_exists) && (current_kmer == has_wrong_color1 || current_kmer_twin == has_wrong_color1)) {
                         cout << "Kmer that typically has wrong color 3 was found at source " << unitig_mapping << endl;
                         cout << "Coloring exists: " << exists << ", really exists: " << really_exists << " and inserted: " << inserted << endl;
                     }
