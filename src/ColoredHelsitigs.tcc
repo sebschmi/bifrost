@@ -28,7 +28,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
     if (initialise_data) {
         DataStorage<void> new_ds(31, total_tigs, colored_dbg->getData()->color_names);
         *(self->getData()) = move(new_ds);
-        colored_dbg->checkColors(colored_dbg->getColorNames());
+        //colored_dbg->checkColors(colored_dbg->getColorNames());
     }
 
     auto tig_edge = tigs_edge_out_offset;
