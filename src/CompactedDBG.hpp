@@ -64,6 +64,7 @@ enum Tigs {
     UNITIGS = 1,
     PATHTIGS = 2,
     HELSITIGS = 3,
+    GREEDYTIGS = 4,
 };
 
 /** @struct CDBG_Build_opt

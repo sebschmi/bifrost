@@ -227,6 +227,8 @@ int parse_ProgramOptions(int argc, char **argv, CCDBG_Build_opt& opt) {
                         opt.compress_tigs = Tigs::PATHTIGS;
                     } else if (strcmp(optarg, "helsitigs") == 0) {
                         opt.compress_tigs = Tigs::HELSITIGS;
+                    } else if (strcmp(optarg, "greedytigs") == 0) {
+                        opt.compress_tigs = Tigs::GREEDYTIGS;
                     } else {
                         cerr << "-C or --compress-tigs was given, but argument is unknown: " << optarg << endl;
                         return 2;
