@@ -186,7 +186,7 @@ void CompactedDBG<U, G>::colorUnitig(const CompactedDBG<U,G>* dbg,
                                      const size_t nb_threads,
                                      const bool initialise_data,
                                      const size_t total_tigs) {
-    cout << "CompactedDBG::colorUnitig(): do nothing, since we are not colored" << endl;
+    //cout << "CompactedDBG::colorUnitig(): do nothing, since we are not colored" << endl;
 }
 
 #endif
