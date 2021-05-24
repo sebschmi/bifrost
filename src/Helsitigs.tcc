@@ -74,7 +74,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         }
     }
 
-    cout << "CompactedDBG::convert_tigs(): Quadratic reporting for hashtable with " << dbg->getHashtableSize() << " entries" << endl;
+    cout << "CompactedDBG::convert_tigs(): Retrieving tigs from rust_helsitigs" << endl;
     size_t offset = 0;
     double duration_coloring = 0.0;
     auto unitig_iterator = dbg->begin();
@@ -90,7 +90,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
             auto insert = tigs_insert_out[i];
 
             if (insert == 0) {
-                unitig_iterator.setIndex(abs(edge));
+                unitig_iterator.setIndex(abs(edge), h_kmer_ccov_ranks);
                 const auto unitig_mapping = *unitig_iterator;
 
                 auto sequence = unitig_mapping.mappedSequenceToString();
@@ -154,6 +154,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         const auto start_coloring = std::chrono::high_resolution_clock::now();
         colorUnitig(dbg,
                     um,
+                    h_kmer_ccov_ranks,
                     tigs_edge_out.data() + offset,
                     tigs_edge_out.data() + limit,
                     tigs_insert_out.data() + offset,
@@ -179,6 +180,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
 template<typename U, typename G>
 void CompactedDBG<U, G>::colorUnitig(const CompactedDBG<U,G>* dbg,
                                      const UnitigMap<U,G>& um,
+                                     const vector<size_t>& h_kmers_ccov_ranks,
                                      const ptrdiff_t* tigs_edge_out_offset,
                                      const ptrdiff_t* tigs_edge_out_limit,
                                      const size_t* tigs_insert_out_offset,

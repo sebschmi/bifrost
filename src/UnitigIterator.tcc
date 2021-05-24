@@ -115,4 +115,33 @@ void unitigIterator<U, G, is_const>::setIndex(size_t i) {
     }
 }
 
+template<typename U, typename G, bool is_const>
+void unitigIterator<U, G, is_const>::setIndex(size_t i, const vector<size_t>& h_kmer_ccov_ranks) {
+    this->i = i;
+
+    if (invalid) return;
+
+    if ((cdbg == nullptr) || cdbg->invalid || (i >= sz)){
+
+        invalid = true;
+        return;
+    }
+
+    if (i < v_unitigs_sz){
+
+        um = UnitigMap<U, G, is_const>(i, 0, cdbg->v_unitigs[i]->getSeq().size() - cdbg->getK() + 1,
+                                       cdbg->v_unitigs[i]->getSeq().size(), false, false, true, cdbg);
+    }
+    else if (i < (v_unitigs_sz + v_kmers_sz)){
+
+        um = UnitigMap<U, G, is_const>(i - v_unitigs_sz, 0, 1, cdbg->getK(), true, false, true, cdbg);
+    }
+    else {
+
+        it_h_kmers_ccov = cdbg->h_kmers_ccov.begin();
+        it_h_kmers_ccov.h = h_kmer_ccov_ranks[(i - (v_unitigs_sz + v_kmers_sz))];
+        um = UnitigMap<U, G, is_const>(it_h_kmers_ccov.getHash(), 0, 1, cdbg->getK(), false, true, true, cdbg);
+    }
+}
+
 #endif

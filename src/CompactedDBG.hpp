@@ -638,7 +638,7 @@ class CompactedDBG {
             h_kmers_ccov = h_kmers_ccov_t(size);
         }
 
-        void colorUnitig(const CompactedDBG<U, G>* dbg, const UnitigMap<U, G>& um, const ptrdiff_t* tigs_edge_out_offset, const ptrdiff_t* tigs_edge_out_limit, const size_t* tigs_insert_out_offset, const size_t* tigs_insert_out_limit, size_t nb_threads, bool initialise_data, size_t total_tigs);
+        void colorUnitig(const CompactedDBG<U, G>* dbg, const UnitigMap<U, G>& um, const vector<size_t>& h_kmers_ccov_ranks, const ptrdiff_t* tigs_edge_out_offset, const ptrdiff_t* tigs_edge_out_limit, const size_t* tigs_insert_out_offset, const size_t* tigs_insert_out_limit, size_t nb_threads, bool initialise_data, size_t total_tigs);
 
     //protected:
 
