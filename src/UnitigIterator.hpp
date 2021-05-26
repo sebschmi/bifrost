@@ -95,7 +95,7 @@ class unitigIterator : public std::iterator<std::input_iterator_tag, UnitigMap<U
 
         void setIndex(size_t i, const vector<size_t>& h_kmer_ccov_ranks);
 
-    private:
+    //private:
 
         size_t i;
 

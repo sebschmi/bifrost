@@ -6,7 +6,7 @@
 template<>
 void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const CompactedDBG<DataAccessor<void>,DataStorage<void>>* dbg,
                                                                       const UnitigMap<DataAccessor<void>, DataStorage<void>>& um,
-                                                                      const vector<size_t>& h_kmers_ccov_ranks,
+                                                                      const vector<size_t>& h_kmers_ccov_orders,
                                                                       const ptrdiff_t* tigs_edge_out_offset,
                                                                       const ptrdiff_t* tigs_edge_out_limit,
                                                                       const size_t* tigs_insert_out_offset,
@@ -55,7 +55,7 @@ void CompactedDBG<DataAccessor<void>, DataStorage<void>>::colorUnitig(const Comp
         auto insert = *tig_insert;
 
         if (insert == 0) {
-            unitig_iterator.setIndex(abs(edge), h_kmers_ccov_ranks);
+            unitig_iterator.setIndex(abs(edge), h_kmers_ccov_orders);
             const auto unitig_mapping = *unitig_iterator;
             //cout << "\nCopying colors from " << unitig_mapping.mappedSequenceToString() << endl;
 

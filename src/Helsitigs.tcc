@@ -29,9 +29,21 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
     cout << "dbg->size() = " << dbg->size() << endl;
     cout << "dbg->v_unitigs.size() = " << dbg->v_unitigs.size() << endl;
     cout << "dbg->km_unitigs.size() = " << dbg->km_unitigs.size() << endl;
+    cout << "dbg->h_kmers_ccov.size() = " << dbg->h_kmers_ccov.size() << endl;
     helsitigs_initialise_graph(dbg->size());
     vector<size_t> unitig_weights;
     auto h_kmer_ccov_ranks = dbg->h_kmers_ccov.compute_rank_array();
+    auto h_kmer_ccov_orders = dbg->h_kmers_ccov.compute_order_array();
+    /*cout << "h_kmer_ccov_ranks(" << h_kmer_ccov_ranks.size() << ")[";
+    for (const auto& r : h_kmer_ccov_ranks) {
+        cout << ", " << r;
+    }
+    cout << "]" << endl;
+    cout << "h_kmer_ccov_orders(" << h_kmer_ccov_orders.size() << ")[";
+    for (const auto& r : h_kmer_ccov_orders) {
+        cout << ", " << r;
+    }
+    cout << "]" << endl;*/
 
     for (const auto unitig : *dbg) {
         //cout << "unitig.getIndex() = " << unitig.getIndex(h_kmer_ccov_ranks) << endl;
@@ -78,6 +90,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
     size_t offset = 0;
     double duration_coloring = 0.0;
     auto unitig_iterator = dbg->begin();
+    //auto debug_unitig_iterator = dbg->begin();
     for (const auto limit : tigs_out_limits) {
         if (limit == 0) {
             break;
@@ -90,7 +103,12 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
             auto insert = tigs_insert_out[i];
 
             if (insert == 0) {
-                unitig_iterator.setIndex(abs(edge), h_kmer_ccov_ranks);
+                unitig_iterator.setIndex(abs(edge), h_kmer_ccov_orders);
+                /*debug_unitig_iterator.setIndex(abs(edge));
+                if (unitig_iterator != debug_unitig_iterator) {
+                    cout << "CompactedDBG::convert_tigs(): Error: unitig iterators differ\nunitig_iterator:       " << unitig_iterator << "\ndebug_unitig_iterator: " << debug_unitig_iterator << endl;
+                    exit(1);
+                }*/
                 const auto unitig_mapping = *unitig_iterator;
 
                 auto sequence = unitig_mapping.mappedSequenceToString();
@@ -154,7 +172,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         const auto start_coloring = std::chrono::high_resolution_clock::now();
         colorUnitig(dbg,
                     um,
-                    h_kmer_ccov_ranks,
+                    h_kmer_ccov_orders,
                     tigs_edge_out.data() + offset,
                     tigs_edge_out.data() + limit,
                     tigs_insert_out.data() + offset,
@@ -180,7 +198,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
 template<typename U, typename G>
 void CompactedDBG<U, G>::colorUnitig(const CompactedDBG<U,G>* dbg,
                                      const UnitigMap<U,G>& um,
-                                     const vector<size_t>& h_kmers_ccov_ranks,
+                                     const vector<size_t>& h_kmers_ccov_orders,
                                      const ptrdiff_t* tigs_edge_out_offset,
                                      const ptrdiff_t* tigs_edge_out_limit,
                                      const size_t* tigs_insert_out_offset,

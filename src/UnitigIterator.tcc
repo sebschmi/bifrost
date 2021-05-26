@@ -139,9 +139,30 @@ void unitigIterator<U, G, is_const>::setIndex(size_t i, const vector<size_t>& h_
     else {
 
         it_h_kmers_ccov = cdbg->h_kmers_ccov.begin();
-        it_h_kmers_ccov.h = h_kmer_ccov_ranks[(i - (v_unitigs_sz + v_kmers_sz))];
+        auto local_i = (i - (v_unitigs_sz + v_kmers_sz));
+        it_h_kmers_ccov.h = h_kmer_ccov_ranks[local_i];
         um = UnitigMap<U, G, is_const>(it_h_kmers_ccov.getHash(), 0, 1, cdbg->getK(), false, true, true, cdbg);
     }
+}
+
+template<typename U, typename G, bool is_const>
+std::ostream& operator<<(std::ostream& stream, const unitigIterator<U, G, is_const>& it) {
+    stream << "UnitigIterator(i = " << it.i;
+    stream << ", v_unitigs_sz = " << it.v_unitigs_sz;
+    stream << ", v_kmers_sz = " << it.v_kmers_sz;
+    stream << ", h_kmers_ccov_sz = "<< it.h_kmers_ccov_sz;
+    stream << ", sz = " << it.sz;
+    stream << ", invalid = " << it.invalid;
+    stream << ", it_h_kmers_ccov = ";
+    stream.flush();
+    append_kmer_hash_table_iterator_to_stream<CompressedCoverage_t<U>, true>(stream, it.it_h_kmers_ccov);
+    stream.flush();
+    stream << ", um = ";
+    append_unitig_map_to_stream_robust(stream, it.um);
+    stream.flush();
+    stream << ", cdbg = " << (void*) it.cdbg << ")";
+    stream.flush();
+    return stream;
 }
 
 #endif
