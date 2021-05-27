@@ -11,6 +11,8 @@ extern "C" void helsitigs_build_graph(const size_t* unitig_weights);
 
 extern "C" void helsitigs_compute_tigs(size_t tig_algorithm, size_t threads, size_t k, const char* matching_file_prefix, ptrdiff_t* tigs_edge_out, size_t* tigs_insert_out, size_t* tigs_out_limits);
 
+
+
 template<typename U, typename G>
 bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, const size_t nb_threads, const string& matching_file_prefix) {
     /*cout << "convert_tigs(dbg, tigs, nb_threads = " << nb_threads << ")" << endl;
@@ -45,8 +47,79 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
     }
     cout << "]" << endl;*/
 
-    size_t merge_nodes_calls = 0;
     const auto start_merge_nodes = std::chrono::high_resolution_clock::now();
+
+    struct MergeCall {size_t u1_index; bool u1_strand; size_t u2_index; bool u2_strand;};
+
+    auto do_merge_calls = [](const vector<MergeCall>& merge_calls) {
+        const auto start = std::chrono::high_resolution_clock::now();
+        for (const auto& merge_call : merge_calls) {
+            helsitigs_merge_nodes(merge_call.u1_index, merge_call.u1_strand, merge_call.u2_index, merge_call.u2_strand);
+        }
+        const auto stop = std::chrono::high_resolution_clock::now();
+        return ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count()) / 1e6;
+    };
+
+    vector<thread> topology_workers;
+    mutex rust_helsitigs_mutex;
+    size_t total_merge_nodes_calls = 0;
+    const size_t MERGE_CALL_BATCH_SIZE = 100000;
+    double merge_nodes_call_time = 0.0;
+    for (size_t t = 0; t < nb_threads; t++) {
+        topology_workers.emplace_back([&]{
+            vector<MergeCall> merge_calls;
+            merge_calls.reserve(MERGE_CALL_BATCH_SIZE + 10);
+            size_t merge_nodes_calls = 0;
+            size_t offset = (dbg->size() / nb_threads) * t;
+            size_t limit = (dbg->size() / nb_threads) * (t + 1);
+            if (t == nb_threads - 1) {
+                limit = dbg->size();
+            }
+
+            auto unitig_iterator = dbg->begin();
+
+            for (size_t unitig_index = offset; unitig_index < limit; unitig_index++) {
+                unitig_iterator.setIndex(unitig_index, h_kmer_ccov_orders);
+                auto unitig = *unitig_iterator;
+
+                for (const auto& successor: unitig.getSuccessors()) {
+                    //cout << "successor.getIndex() = " << successor.getIndex(h_kmer_ccov_ranks) << endl;
+                    MergeCall merge_call;
+                    merge_call.u1_index = unitig_index;
+                    merge_call.u1_strand = unitig.strand;
+                    merge_call.u2_index = successor.getIndex(h_kmer_ccov_ranks);
+                    merge_call.u2_strand = successor.strand;
+                    merge_calls.push_back(merge_call);
+                }
+                for (const auto& predecessor: unitig.getPredecessors()) {
+                    //cout << "predecessor.getIndex() = " << predecessor.getIndex(h_kmer_ccov_ranks) << endl;
+                    MergeCall merge_call;
+                    merge_call.u1_index = predecessor.getIndex(h_kmer_ccov_ranks);
+                    merge_call.u1_strand = predecessor.strand;
+                    merge_call.u2_index = unitig_index;
+                    merge_call.u2_strand = unitig.strand;
+                    merge_calls.push_back(merge_call);
+                }
+
+                if (merge_calls.size() > MERGE_CALL_BATCH_SIZE) {
+                    unique_lock<mutex> lock(rust_helsitigs_mutex);
+                    merge_nodes_call_time += do_merge_calls(merge_calls);
+                    merge_nodes_calls += merge_calls.size();
+                    merge_calls.clear();
+                }
+            }
+
+            unique_lock<mutex> lock(rust_helsitigs_mutex);
+            merge_nodes_call_time += do_merge_calls(merge_calls);
+            merge_nodes_calls += merge_calls.size();
+            merge_calls.clear();
+            total_merge_nodes_calls += merge_nodes_calls;
+        });
+    }
+
+    for (auto& t : topology_workers) t.join();
+
+    /*size_t merge_nodes_calls = 0;
     for (const auto unitig : *dbg) {
         auto unitig_index = unitig.getIndex(h_kmer_ccov_ranks);
         //cout << "unitig.getIndex() = " << unitig.getIndex(h_kmer_ccov_ranks) << endl;
@@ -63,15 +136,15 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
 
         // len is length of the mapping in kmers
         unitig_weights.push_back(unitig.len);
-    }
+    }*/
     const auto stop_merge_nodes = std::chrono::high_resolution_clock::now();
     double duration_merge_nodes = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_merge_nodes - start_merge_nodes).count()) / 1e6;
-    cout << "Took " << std::fixed << std::setprecision(3) << duration_merge_nodes << "s for " << merge_nodes_calls << " calls to helsitigs_merge_nodes" << std::endl;
+    cout << "Took " << std::fixed << std::setprecision(3) << duration_merge_nodes << "s for " << total_merge_nodes_calls << " to send topology using " << nb_threads << " threads, of this " << merge_nodes_call_time << "s are from mutual exclusive calls to helsitigs_merge_nodes" << std::endl;
 
     helsitigs_build_graph(unitig_weights.data());
     const auto stop_send = std::chrono::high_resolution_clock::now();
     double duration_send = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_send - start_send).count()) / 1e6;
-    cout << "Took " << std::fixed << std::setprecision(3) << duration_send << "s to send topology to rust_helsitigs" << std::endl;
+    cout << "Took " << std::fixed << std::setprecision(3) << duration_send << "s to build topology with rust_helsitigs" << std::endl;
 
     const auto start_compute = std::chrono::high_resolution_clock::now();
     vector<ptrdiff_t> tigs_edge_out(dbg->size() * 2, 0);

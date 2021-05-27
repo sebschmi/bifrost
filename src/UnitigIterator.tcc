@@ -116,7 +116,7 @@ void unitigIterator<U, G, is_const>::setIndex(size_t i) {
 }
 
 template<typename U, typename G, bool is_const>
-void unitigIterator<U, G, is_const>::setIndex(size_t i, const vector<size_t>& h_kmer_ccov_ranks) {
+void unitigIterator<U, G, is_const>::setIndex(size_t i, const vector<size_t>& h_kmer_ccov_orders) {
     this->i = i;
 
     if (invalid) return;
@@ -140,7 +140,7 @@ void unitigIterator<U, G, is_const>::setIndex(size_t i, const vector<size_t>& h_
 
         it_h_kmers_ccov = cdbg->h_kmers_ccov.begin();
         auto local_i = (i - (v_unitigs_sz + v_kmers_sz));
-        it_h_kmers_ccov.h = h_kmer_ccov_ranks[local_i];
+        it_h_kmers_ccov.h = h_kmer_ccov_orders[local_i];
         um = UnitigMap<U, G, is_const>(it_h_kmers_ccov.getHash(), 0, 1, cdbg->getK(), false, true, true, cdbg);
     }
 }
