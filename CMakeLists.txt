@@ -1,6 +1,9 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.9)
 
 project(Bifrost)
+
+include(CheckIPOSupported)
+check_ipo_supported()
 
 # To enable a larger default k-mer size, replace MAX_KMER_SIZE with a larger multiple of 32: actual maximum k-mer size will be MAX_KMER_SIZE-1.
 SET(MAX_KMER_SIZE "32" CACHE STRING "MAX_KMER_SIZE")

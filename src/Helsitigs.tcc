@@ -45,6 +45,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
     }
     cout << "]" << endl;*/
 
+    const auto start_merge_nodes = std::chrono::high_resolution_clock::now();
     for (const auto unitig : *dbg) {
         //cout << "unitig.getIndex() = " << unitig.getIndex(h_kmer_ccov_ranks) << endl;
         for (const auto& successor: unitig.getSuccessors()) {
@@ -59,6 +60,9 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
         // len is length of the mapping in kmers
         unitig_weights.push_back(unitig.len);
     }
+    const auto stop_merge_nodes = std::chrono::high_resolution_clock::now();
+    double duration_merge_nodes = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_merge_nodes - start_merge_nodes).count()) / 1e6;
+    cout << "Took " << std::fixed << std::setprecision(3) << duration_merge_nodes << "s to merge nodes in rust_helsitigs" << std::endl;
 
     helsitigs_build_graph(unitig_weights.data());
     const auto stop_send = std::chrono::high_resolution_clock::now();
