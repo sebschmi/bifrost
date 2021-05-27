@@ -45,16 +45,20 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
     }
     cout << "]" << endl;*/
 
+    size_t merge_nodes_calls = 0;
     const auto start_merge_nodes = std::chrono::high_resolution_clock::now();
     for (const auto unitig : *dbg) {
+        auto unitig_index = unitig.getIndex(h_kmer_ccov_ranks);
         //cout << "unitig.getIndex() = " << unitig.getIndex(h_kmer_ccov_ranks) << endl;
         for (const auto& successor: unitig.getSuccessors()) {
             //cout << "successor.getIndex() = " << successor.getIndex(h_kmer_ccov_ranks) << endl;
-            helsitigs_merge_nodes(unitig.getIndex(h_kmer_ccov_ranks), unitig.strand, successor.getIndex(h_kmer_ccov_ranks), successor.strand);
+            helsitigs_merge_nodes(unitig_index, unitig.strand, successor.getIndex(h_kmer_ccov_ranks), successor.strand);
+            merge_nodes_calls += 1;
         }
         for (const auto& predecessor: unitig.getPredecessors()) {
             //cout << "predecessor.getIndex() = " << predecessor.getIndex(h_kmer_ccov_ranks) << endl;
-            helsitigs_merge_nodes(predecessor.getIndex(h_kmer_ccov_ranks), predecessor.strand, unitig.getIndex(h_kmer_ccov_ranks), unitig.strand);
+            helsitigs_merge_nodes(predecessor.getIndex(h_kmer_ccov_ranks), predecessor.strand, unitig_index, unitig.strand);
+            merge_nodes_calls += 1;
         }
 
         // len is length of the mapping in kmers
@@ -62,7 +66,7 @@ bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, 
     }
     const auto stop_merge_nodes = std::chrono::high_resolution_clock::now();
     double duration_merge_nodes = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_merge_nodes - start_merge_nodes).count()) / 1e6;
-    cout << "Took " << std::fixed << std::setprecision(3) << duration_merge_nodes << "s to merge nodes in rust_helsitigs" << std::endl;
+    cout << "Took " << std::fixed << std::setprecision(3) << duration_merge_nodes << "s for " << merge_nodes_calls << " calls to helsitigs_merge_nodes" << std::endl;
 
     helsitigs_build_graph(unitig_weights.data());
     const auto stop_send = std::chrono::high_resolution_clock::now();
