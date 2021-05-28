@@ -3084,6 +3084,8 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, const size_t nb_un
         return false;
     }
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     const bool reference_mode = (opt.filename_ref_in.size() != 0);
 
     const vector<string>& filename_in = reference_mode ? opt.filename_ref_in : opt.filename_seq_in;
@@ -3352,6 +3354,9 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, const size_t nb_un
     if (fp_candidate != nullptr) delete[] fp_candidate;
 
     if (opt.verbose) cout << "CompactedDBG::construct(): Closed all input files" << endl;
+    double duration = ((double) std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()) / 1e6;
+    if (opt.verbose) cout << "Took " << std::fixed << std::setprecision(3) << duration << "s to extract approximate unitigs" << endl;
+    start = std::chrono::high_resolution_clock::now();
 
     const size_t unitigsBefore = size();
 
@@ -3361,12 +3366,19 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, const size_t nb_un
 
     const int unitigsAfter1 = size();
 
+    duration = ((double) std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()) / 1e6;
+    if (opt.verbose) cout << "Took " << std::fixed << std::setprecision(3) << duration << "s to extract all unitigs" << endl;
+    start = std::chrono::high_resolution_clock::now();
     if (opt.verbose) cout << endl << "CompactedDBG::construct(): Splitting unitigs (2/2)" << endl;
 
     check_fp_tips(ignored_km_tips);
     ignored_km_tips.clear_tables();
 
     const int unitigsAfter2 = size();
+
+    duration = ((double) std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()) / 1e6;
+    if (opt.verbose) cout << "Took " << std::fixed << std::setprecision(3) << duration << "s to check fp tips" << endl;
+    start = std::chrono::high_resolution_clock::now();
 
     if (opt.verbose) {
 
@@ -3379,9 +3391,13 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, const size_t nb_un
         cout << endl << "CompactedDBG::construct(): Joining unitigs" << endl;
     }
 
-    const size_t joined = joinUnitigs_<is_void<U>::value>(nullptr, opt.nb_threads);
+    const size_t joined = joinUnitigs_<is_void<U>::value>(nullptr, opt.nb_threads, opt.verbose);
 
     const int unitigsAfter3 = size();
+
+    duration = ((double) std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()) / 1e6;
+    if (opt.verbose) cout << "Took " << std::fixed << std::setprecision(3) << duration << "s to join unitigs" << endl;
+    start = std::chrono::high_resolution_clock::now();
 
     if (opt.verbose) {
 
@@ -6238,8 +6254,7 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
                 if ((joins.find(tail) == joins.end()) && checkJoin(tail, cm, fw)) joins.insert(fw.twin(), tail);
                 if ((joins.find(head_twin) == joins.end()) && checkJoin(head_twin, cm, bw)) joins.insert(bw.twin(), head_twin);
             }
-        }
-        else {
+        } else {
 
             //Hybrid_SpinLockRW_MCS<> lck(nb_threads);
             SpinLockRW lck;
@@ -6832,7 +6847,7 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
 //       joined is the number of joined unitigs
 template<typename U, typename G>
 template<bool is_void>
-typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(vector<Kmer>* v_joins, const size_t nb_threads) {
+typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(vector<Kmer>* v_joins, const size_t nb_threads, const bool verbose) {
 
     size_t joined = 0;
     size_t cov_full = CompressedCoverage::getFullCoverage();
@@ -6854,7 +6869,13 @@ typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_
     //-------------------------------------------------------------------------------
     KmerHashTable<char> joins;
 
+    auto start_create_join_hashtable = std::chrono::high_resolution_clock::now();
     createJoinHT(v_joins, joins, nb_threads);
+    if (verbose) {
+        auto stop_create_join_hashtable = std::chrono::high_resolution_clock::now();
+        double duration_create_join_hashtable = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_create_join_hashtable - start_create_join_hashtable).count()) / 1e6;
+        cout << "CompactedDBG::joinUnitigs_: Created join hashtable in " << std::setprecision(3) << duration_create_join_hashtable << "s" << endl;
+    }
 
     if (v_joins != nullptr) v_joins->clear();
 
@@ -7034,7 +7055,9 @@ typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_
 
 template<typename U, typename G>
 template<bool is_void>
-typename std::enable_if<is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(vector<Kmer>* v_joins, const size_t nb_threads) {
+typename std::enable_if<is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(vector<Kmer>* v_joins, const size_t nb_threads, const bool verbose) {
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     size_t joined = 0;
     size_t cov_full = CompressedCoverage::getFullCoverage();
@@ -7056,7 +7079,13 @@ typename std::enable_if<is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(
     //-------------------------------------------------------------------------------
     KmerHashTable<char> joins;
 
+    auto start_create_join_hashtable = std::chrono::high_resolution_clock::now();
     createJoinHT(v_joins, joins, nb_threads);
+    if (verbose) {
+        auto stop_create_join_hashtable = std::chrono::high_resolution_clock::now();
+        double duration_create_join_hashtable = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_create_join_hashtable - start_create_join_hashtable).count()) / 1e6;
+        cout << "CompactedDBG::joinUnitigs_: Created join hashtable in " << std::setprecision(3) << duration_create_join_hashtable << "s" << endl;
+    }
 
     if (v_joins != nullptr) v_joins->clear();
 
@@ -7217,6 +7246,12 @@ typename std::enable_if<is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(
 
     if (v_unitigs_size < v_unitigs.size()) v_unitigs.resize(v_unitigs_size);
     if (v_kmers_size < km_unitigs.size()) km_unitigs.resize(v_kmers_size);
+
+    if (verbose) {
+        auto stop = std::chrono::high_resolution_clock::now();
+        double duration = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count()) / 1e6;
+        cout << "CompactedDBG::joinUnitigs_: Finished after " << std::setprecision(3) << duration << "s" << endl;
+    }
 
     return joined;
 }

@@ -647,9 +647,9 @@ class CompactedDBG {
         pair<size_t, size_t> splitAllUnitigs();
         pair<size_t, size_t> getSplitInfoAllUnitigs() const;
 
-        inline size_t joinUnitigs(vector<Kmer>* v_joins = nullptr, const size_t nb_threads = 1) {
+        inline size_t joinUnitigs(vector<Kmer>* v_joins = nullptr, const size_t nb_threads = 1, bool verbose = false) {
 
-            return joinUnitigs_<is_void<U>::value>(v_joins, nb_threads);
+            return joinUnitigs_<is_void<U>::value>(v_joins, nb_threads, verbose);
         }
 
         bool mergeData(const CompactedDBG<U, G>& o, const size_t nb_threads = 1, const bool verbose = false);
@@ -728,10 +728,10 @@ class CompactedDBG {
         pair<size_t, size_t> extractAllUnitigs();
 
         template<bool is_void>
-        typename std::enable_if<!is_void, size_t>::type joinUnitigs_(vector<Kmer>* v_joins = nullptr, const size_t nb_threads = 1);
+        typename std::enable_if<!is_void, size_t>::type joinUnitigs_(vector<Kmer>* v_joins = nullptr, const size_t nb_threads = 1, bool verbose = false);
 
         template<bool is_void>
-        typename std::enable_if<is_void, size_t>::type joinUnitigs_(vector<Kmer>* v_joins = nullptr, const size_t nb_threads = 1);
+        typename std::enable_if<is_void, size_t>::type joinUnitigs_(vector<Kmer>* v_joins = nullptr, const size_t nb_threads = 1, bool verbose = false);
 
         void moveToAbundant();
         void setFullCoverage(const size_t cov) const;
