@@ -607,7 +607,11 @@ int main(int argc, char **argv){
                     }
 
                     if (ok) {
+                        auto start_write = std::chrono::high_resolution_clock::now();
                         ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.verbose);
+                        auto stop_write = std::chrono::high_resolution_clock::now();
+                        double duration_write = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_write - start_write).count()) / 1e6;
+                        cout << "Took " << std::fixed << std::setprecision(3) << duration_write << "s for writing colored graph" << endl;
                     }
                 }
                 else {
@@ -636,7 +640,11 @@ int main(int argc, char **argv){
                     }
 
                     if (ok) {
+                        auto start_write = std::chrono::high_resolution_clock::now();
                         cdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.outputGFA, opt.verbose);
+                        auto stop_write = std::chrono::high_resolution_clock::now();
+                        double duration_write = ((double) std::chrono::duration_cast<std::chrono::microseconds>(stop_write - start_write).count()) / 1e6;
+                        cout << "Took " << std::fixed << std::setprecision(3) << duration_write << "s for writing graph" << endl;
                     }
                 }
             }
