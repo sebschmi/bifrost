@@ -946,7 +946,7 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
     }
     else {
 
-        if (verbose) cout << "CompactedDBG::read(): Reading in FA (???) format" << endl;
+        if (verbose) cout << R"(CompactedDBG::read(): Reading in FA (???) format)" << endl;
         const int k = k_;
         const int g = g_;
 
