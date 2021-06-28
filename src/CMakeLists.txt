@@ -35,15 +35,14 @@ if (NOT DEFINED ENV{LIBRUST_HELSITIGS})
 	message(FATAL_ERROR "Environment variable LIBRUST_HELSITIGS not set. Must point to the respective library file of the rust_helsitigs crate.")
 endif()
 
-set(LIBRUST_HELSITIGS ${CMAKE_CURRENT_SOURCE_DIR}/$ENV{LIBRUST_HELSITIGS})
-#set(LIBRUST_HELSITIGS "${CMAKE_CURRENT_SOURCE_DIR}/../../helsitigs/rust_helsitigs/target/debug/librust_helsitigs.so")
-if (EXISTS ${LIBRUST_HELSITIGS})
-else()
-    message( FATAL_ERROR "Not found: ${LIBRUST_HELSITIGS}" )
-endif()
-
-target_link_libraries(bifrost_static ${LIBRUST_HELSITIGS})
-target_link_libraries(bifrost_dynamic ${LIBRUST_HELSITIGS})
+#set(LIBRUST_HELSITIGS ${CMAKE_CURRENT_SOURCE_DIR}/$ENV{LIBRUST_HELSITIGS})
+#if (EXISTS ${LIBRUST_HELSITIGS})
+#else()
+#    message( FATAL_ERROR "Not found: ${LIBRUST_HELSITIGS}" )
+#endif()
+#
+#target_link_libraries(bifrost_static ${LIBRUST_HELSITIGS})
+#target_link_libraries(bifrost_dynamic ${LIBRUST_HELSITIGS})
 
 target_link_libraries(Bifrost bifrost_dynamic)
 

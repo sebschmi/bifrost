@@ -1,7 +1,7 @@
 #ifndef BIFROST_HELSITIGS_TCC
 #define BIFROST_HELSITIGS_TCC
 
-extern "C" void helsitigs_initialise(size_t threads);
+/*extern "C" void helsitigs_initialise(size_t threads);
 
 extern "C" void helsitigs_initialise_graph(size_t unitig_amount);
 
@@ -9,9 +9,17 @@ extern "C" void helsitigs_merge_nodes(size_t unitig_a, bool strand_a, size_t uni
 
 extern "C" void helsitigs_build_graph(const size_t* unitig_weights);
 
-extern "C" void helsitigs_compute_tigs(size_t tig_algorithm, size_t threads, size_t k, const char* matching_file_prefix, ptrdiff_t* tigs_edge_out, size_t* tigs_insert_out, size_t* tigs_out_limits);
+extern "C" void helsitigs_compute_tigs(size_t tig_algorithm, size_t threads, size_t k, const char* matching_file_prefix, ptrdiff_t* tigs_edge_out, size_t* tigs_insert_out, size_t* tigs_out_limits);*/
 
+void helsitigs_initialise(size_t threads);
 
+void helsitigs_initialise_graph(size_t unitig_amount);
+
+void helsitigs_merge_nodes(size_t unitig_a, bool strand_a, size_t unitig_b, bool strand_b);
+
+void helsitigs_build_graph(const size_t* unitig_weights);
+
+void helsitigs_compute_tigs(size_t tig_algorithm, size_t threads, size_t k, const char* matching_file_prefix, ptrdiff_t* tigs_edge_out, size_t* tigs_insert_out, size_t* tigs_out_limits);
 
 template<typename U, typename G>
 bool CompactedDBG<U, G>::convert_tigs(CompactedDBG<U, G>* dbg, const Tigs tigs, const size_t nb_threads, const string& matching_file_prefix) {

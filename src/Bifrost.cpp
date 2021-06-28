@@ -224,10 +224,16 @@ int parse_ProgramOptions(int argc, char **argv, CCDBG_Build_opt& opt) {
                     if (strcmp(optarg, "unitigs") == 0) {
                         opt.compress_tigs = Tigs::UNITIGS;
                     } else if (strcmp(optarg, "pathtigs") == 0) {
+                        cout << "Error: pathtigs disabled to get rid of librust_helsitigs dependency" << endl;
+                        exit(1);
                         opt.compress_tigs = Tigs::PATHTIGS;
                     } else if (strcmp(optarg, "helsitigs") == 0) {
+                        cout << "Error: helsitigs disabled to get rid of librust_helsitigs dependency" << endl;
+                        exit(1);
                         opt.compress_tigs = Tigs::HELSITIGS;
                     } else if (strcmp(optarg, "greedytigs") == 0) {
+                        cout << "Error: greedytigs disabled to get rid of librust_helsitigs dependency" << endl;
+                        exit(1);
                         opt.compress_tigs = Tigs::GREEDYTIGS;
                     } else {
                         cerr << "-C or --compress-tigs was given, but argument is unknown: " << optarg << endl;
@@ -591,6 +597,7 @@ int main(int argc, char **argv){
 
                     bool ok = true;
                     if (opt.compress_tigs != Tigs::NONE) {
+
                         auto start_tig = std::chrono::high_resolution_clock::now();
 
                         ColoredCDBG<> tigged_ccdbg(opt.k, opt.g);
@@ -775,4 +782,29 @@ int main(int argc, char **argv){
             }
         }
     }
+}
+
+void helsitigs_initialise(size_t threads) {
+    cout << "Error: tigs disabled to get rid of librust_helsitigs dependency" << endl;
+    exit(1);
+}
+
+void helsitigs_initialise_graph(size_t unitig_amount) {
+    cout << "Error: tigs disabled to get rid of librust_helsitigs dependency" << endl;
+    exit(1);
+}
+
+void helsitigs_merge_nodes(size_t unitig_a, bool strand_a, size_t unitig_b, bool strand_b) {
+    cout << "Error: tigs disabled to get rid of librust_helsitigs dependency" << endl;
+    exit(1);
+}
+
+void helsitigs_build_graph(const size_t* unitig_weights) {
+    cout << "Error: tigs disabled to get rid of librust_helsitigs dependency" << endl;
+    exit(1);
+}
+
+void helsitigs_compute_tigs(size_t tig_algorithm, size_t threads, size_t k, const char* matching_file_prefix, ptrdiff_t* tigs_edge_out, size_t* tigs_insert_out, size_t* tigs_out_limits) {
+    cout << "Error: tigs disabled to get rid of librust_helsitigs dependency" << endl;
+    exit(1);
 }
