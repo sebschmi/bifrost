@@ -16,7 +16,8 @@ vector<pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(   cons
 
     if (seq.length() < k_){
 
-        cerr << "CompactedDBG::searchSequence(): Query length is shorter than k-mer size" << endl;
+        cerr << "CompactedDBG::searchSequence(): [A] Query length (" << seq.length() << ") is shorter than k-mer size (" << k_ << ")" << endl;
+        exit(1);
 
         return vector<pair<size_t, UnitigMap<U, G>>>();
     }
@@ -275,7 +276,8 @@ vector<pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(   cons
 
     if (seq.length() < k_){
 
-        cerr << "CompactedDBG::searchSequence(): Query length is shorter than k-mer size" << endl;
+        cerr << "CompactedDBG::searchSequence(): [B] Query length (" << seq.length() << ") is shorter than k-mer size (" << k_ << ")" << endl;
+        exit(1);
 
         return vector<pair<size_t, UnitigMap<U, G>>>();
     }
@@ -551,7 +553,8 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
 
     if (seq.length() < k_){
 
-        cerr << "CompactedDBG::searchSequence(): Query length is shorter than k-mer size" << endl;
+        cerr << "CompactedDBG::searchSequence(): [C] Query length (" << seq.length() << ") is shorter than k-mer size (" << k_ << ")" << endl;
+        exit(1);
 
         return vector<pair<size_t, const_UnitigMap<U, G>>>();
     }
@@ -811,7 +814,8 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
 
     if (seq.length() < k_){
 
-        cerr << "CompactedDBG::searchSequence(): Query length is shorter than k-mer size" << endl;
+        cerr << "CompactedDBG::searchSequence(): [D] Query length (" << seq.length() << ") is shorter than k-mer size (" << k_ << ")" << endl;
+        exit(1);
 
         return vector<pair<size_t, const_UnitigMap<U, G>>>();
     }
@@ -1213,7 +1217,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
             nb_queries_found = 0;
 
-            if (verbose) cout << "CompactedDBG::search(): Creating query workers" << endl;
+            if (verbose) cout << "CompactedDBG::search(): Creating query workers (k_: " << k_ << ")" << endl;
             for (size_t t = 0; t < nb_threads; ++t){
 
                 workers.emplace_back(
@@ -1245,6 +1249,11 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
                                     buffer_sz += s.length();
 
+                                    if (s.length() < k_) {
+                                        cout << "Error: read query sequence '" << fp.getNameString() << "' of length (" << s.length() << ") less than k (" << k_ << ")" << endl;
+                                        exit(1);
+                                    }
+
                                     buffers_seq.push_back(std::move(s));
                                     buffers_name.push_back(string(fp.getNameString()));
 
@@ -1261,11 +1270,16 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
                                 bool is_found = false;
 
+                                if (buffers_seq[i].length() < k_) {
+                                    cout << "Warning: query sequence is shorter than k" << endl;
+                                }
+
                                 const size_t nb_km_min = static_cast<double>(buffers_seq[i].length() - k_ + 1) * ratio_kmers;
                                 const size_t l_name = buffers_name[i].length();
 
                                 for (auto& c : buffers_seq[i]) c &= 0xDF;
 
+                                // Calling variant D
                                 const vector<pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   buffers_seq[i], true, inexact_search, inexact_search,
                                                                                                             inexact_search, ratio_kmers, true);
 

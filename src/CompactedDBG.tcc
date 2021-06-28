@@ -965,16 +965,20 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
 
             KmerStream kms(kms_opt);
 
-            MinimizerIndex hmap_min_unitigs_tmp(max(1UL, kms.MinimizerF0()) * 1.05);
+            const size_t min_index_size = max(1UL, kms.MinimizerF0()) * 1.05;
+            if (verbose) cout << "CompactedDBG::read(): Creating MinimizerIndex with size " << min_index_size << endl;
+            MinimizerIndex hmap_min_unitigs_tmp(min_index_size);
 
             hmap_min_unitigs = std::move(hmap_min_unitigs_tmp);
         }
 
         setKmerGmerLength(k, g);
 
+        if (verbose) cout << "CompactedDBG::read(): Entering readFASTA" << endl;
         readFASTA(input_filename, nb_threads);
     }
 
+    if (verbose) cout << "CompactedDBG::read(): Setting full coverage" << endl;
     setFullCoverage(1);
 
     for (auto& unitig : *this) unitig.setFullCoverage();
@@ -8520,6 +8524,8 @@ size_t CompactedDBG<U, G>::joinTips(string filename_MBBF_uniq_kmers, const size_
 
 template<typename U, typename G>
 void CompactedDBG<U, G>::setKmerGmerLength(const int kmer_length, const int minimizer_length){
+
+    cout << "CompactedDBG::setKmerGmerLength(): Set k = " << kmer_length << " and g = " << minimizer_length << endl;
 
     invalid = false;
 

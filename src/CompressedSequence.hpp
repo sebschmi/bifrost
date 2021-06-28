@@ -77,9 +77,19 @@ class CompressedSequence {
 
         BFG_INLINE size_t size() const {
 
-            if (isShort()) return (asBits._size >> 1);
+            size_t size = -1;
 
-            return (asPointer._length >> 1);
+            if (isShort()) {
+                size = (asBits._size >> 1);
+            } else {
+                size = (asPointer._length >> 1);
+            }
+
+            if (size > 1e10) {
+                cout << "Warning: CompressedSequence looks like it has huge size: " << size << ", sequence: <omitted>" << endl;
+            }
+
+            return size;
         }
 
     private:

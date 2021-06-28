@@ -84,6 +84,8 @@ CompressedCoverage& CompressedCoverage::operator=(CompressedCoverage&& o){
 //       or a bigger array on the heap if sz > size_limit
 void CompressedCoverage::initialize(const size_t sz, const bool full) {
 
+    assert(sz != -1);
+
     if (full) asBits = fullMask | (sz << 32);
     else if (sz <= size_limit) asBits = tagMask | (sizeMask & (sz << 2));
     else {
@@ -96,7 +98,10 @@ void CompressedCoverage::initialize(const size_t sz, const bool full) {
         memset(asPointer + 8, 0, round_to_bytes(sz)); // 0 out array allocated
     }
 
-    assert(sz == size());
+    if (sz != size()) {
+        cout << "sz: " << sz << "; size(): " << size() << endl;
+        assert(sz == size());
+    }
 }
 
 void CompressedCoverage::initialize(const size_t sz, const size_t init_cov) {

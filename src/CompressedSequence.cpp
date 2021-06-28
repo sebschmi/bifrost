@@ -208,6 +208,12 @@ void CompressedSequence::_resize_and_copy(const size_t new_cap, const size_t cop
 //       capacity of a might be updated to fit the new string.
 void CompressedSequence::setSequence(const char *s, const size_t length, const size_t offset, const bool reversed) {
 
+    if (length > 1e10) {
+        cout << "Warning: Found extremely long sequence of length: " << length << ", sequence: " << s << endl;
+    } else if (length < Kmer::k) {
+        cout << "Warning: Found sequence shorter than k (" << Kmer::k << ") of length: " << length << ", sequence: " << s << endl;
+    }
+
     const size_t len = offset + length;
 
     if (round_to_bytes(len) > capacity()) _resize_and_copy(round_to_bytes(length + offset), size());
