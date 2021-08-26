@@ -31,10 +31,10 @@ else()
     message(FATAL_ERROR "zlib not found. Required for to output files")
 endif(ZLIB_FOUND)
 
-if (NOT DEFINED ENV{LIBRUST_HELSITIGS})
-	message(FATAL_ERROR "Environment variable LIBRUST_HELSITIGS not set. Must point to the respective library file of the rust_helsitigs crate.")
-endif()
-
+#if (NOT DEFINED ENV{LIBRUST_HELSITIGS})
+#	message(FATAL_ERROR "Environment variable LIBRUST_HELSITIGS not set. Must point to the respective library file of the rust_helsitigs crate.")
+#endif()
+#
 #set(LIBRUST_HELSITIGS ${CMAKE_CURRENT_SOURCE_DIR}/$ENV{LIBRUST_HELSITIGS})
 #if (EXISTS ${LIBRUST_HELSITIGS})
 #else()
