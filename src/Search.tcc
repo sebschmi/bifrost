@@ -251,7 +251,7 @@ vector<pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(   cons
 template<typename U, typename G>
 vector<pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(   const string& seq, const bool exact, const bool insertion,
                                                                             const bool deletion, const bool substitution,
-                                                                            const double ratio_kmers, const bool or_exclusive_match) {
+                                                                            const double ratio_kmers, const bool or_exclusive_match, uint64_t& hops) {
 
     if (invalid){
 
@@ -447,6 +447,7 @@ vector<pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(   cons
 
         for (size_t i = 0; i < seq.length() - k_ + 1; ++i) {
 
+            hops += 1;
             const UnitigMap<U, G> um = findUnitig(seq.c_str(), i, seq.length());
 
             if (!um.isEmpty) { // Read maps to a Unitig
@@ -789,7 +790,7 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
 template<typename U, typename G>
 vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(     const string& seq, const bool exact, const bool insertion,
                                                                                     const bool deletion, const bool substitution,
-                                                                                    const double ratio_kmers, const bool or_exclusive_match) const {
+                                                                                    const double ratio_kmers, const bool or_exclusive_match, uint64_t& hops) const {
 
     if (invalid){
 
@@ -985,6 +986,7 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
 
         for (size_t i = 0; i < seq.length() - k_ + 1; ++i) {
 
+            hops += 1;
             const const_UnitigMap<U, G> um = findUnitig(seq.c_str(), i, seq.length());
 
             if (!um.isEmpty) { // Read maps to a Unitig
@@ -1152,6 +1154,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
         size_t pos_buffer_out = 0;
         size_t nb_queries_found = 0;
+        uint64_t hops = 0;
 
         while (fp.read(s, file_id)){
 
@@ -1164,7 +1167,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
             for (auto& c : s) c &= 0xDF;
 
             const vector<pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   s, true, inexact_search, inexact_search,
-                                                                                        inexact_search, ratio_kmers, true);
+                                                                                        inexact_search, ratio_kmers, true, hops);
 
             if (inexact_search){
 
@@ -1201,7 +1204,8 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
         delete[] buffer_res;
 
-        if (verbose) cout << "CompactedDBG::search(): Found " << nb_queries_found << " queries. " << endl;
+        if (verbose) cout << "CompactedDBG::search(): Found " << nb_queries_found << " queries." << endl;
+        if (verbose) cout << "CompactedDBG::search(): Queried the minimizer index " << hops << " times during search." << endl;
     }
     else {
 
@@ -1216,13 +1220,14 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
             std::atomic<size_t> nb_queries_found;
 
             nb_queries_found = 0;
+            std::vector<uint64_t> hops(nb_threads, 0); // len: nb_threads, data: 0
 
             if (verbose) cout << "CompactedDBG::search(): Creating query workers (k_: " << k_ << ")" << endl;
             for (size_t t = 0; t < nb_threads; ++t){
 
                 workers.emplace_back(
 
-                    [&]{
+                    [&, t]{
 
                         char* buffer_res = new char[thread_seq_buf_sz];
 
@@ -1281,7 +1286,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
                                 // Calling variant D
                                 const vector<pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   buffers_seq[i], true, inexact_search, inexact_search,
-                                                                                                            inexact_search, ratio_kmers, true);
+                                                                                                            inexact_search, ratio_kmers, true, hops[t]);
 
                                 if (inexact_search) {
 
@@ -1336,7 +1341,10 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
             if (verbose) cout << "CompactedDBG::search(): Joining query workers" << endl;
             for (auto& t : workers) t.join();
 
+            uint64_t hops_sum = std::accumulate(hops.begin(), hops.end(), (uint64_t) 0);
+
             if (verbose) cout << "CompactedDBG::search(): Found " << nb_queries_found << " queries. " << endl;
+            if (verbose) cout << "CompactedDBG::search(): Queried the minimizer index " << hops_sum << " times during search." << endl;
         }
     }
 

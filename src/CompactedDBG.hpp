@@ -767,10 +767,10 @@ class CompactedDBG {
         void print() const;
 
         vector<pair<size_t, UnitigMap<U, G>>> searchSequence(   const string& seq, const bool exact, const bool insertion, const bool deletion,
-                                                                const bool substitution, const double ratio_kmers, const bool or_exclusive_match);
+                                                                const bool substitution, const double ratio_kmers, const bool or_exclusive_match, uint64_t& hops);
 
         vector<pair<size_t, const_UnitigMap<U, G>>> searchSequence( const string& seq, const bool exact, const bool insertion, const bool deletion,
-                                                                    const bool substitution, const double ratio_kmers, const bool or_exclusive_match) const;
+                                                                    const bool substitution, const double ratio_kmers, const bool or_exclusive_match, uint64_t& hops) const;
 
         int k_;
         int g_;
