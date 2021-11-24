@@ -980,12 +980,12 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
 
         setKmerGmerLength(k, g);
 
-        auto start_read_gfa = std::chrono::high_resolution_clock::now();
+        auto start_read_fasta = std::chrono::high_resolution_clock::now();
         if (verbose) cout << "CompactedDBG::read(): Entering readFASTA" << endl;
         readFASTA(input_filename, nb_threads);
-        auto stop_read_gfa = std::chrono::high_resolution_clock::now();
-        double duration_read_gfa = std::chrono::duration_cast<std::chrono::microseconds>(stop_read_gfa - start_read_gfa).count() / 1e6;
-        cout << "Took " << std::setprecision(3) << duration_read_gfa << "s for CompactedDBG::readGFA(input_filename = " << input_filename << ", nb_threads = " << nb_threads << ")" << std::endl;
+        auto stop_read_fasta = std::chrono::high_resolution_clock::now();
+        double duration_read_fasta = std::chrono::duration_cast<std::chrono::microseconds>(stop_read_fasta - start_read_fasta).count() / 1e6;
+        cout << "Took " << std::setprecision(3) << duration_read_fasta << "s for CompactedDBG::readFASTA(input_filename = " << input_filename << ", nb_threads = " << nb_threads << ")" << std::endl;
     }
 
     if (verbose) cout << "CompactedDBG::read(): Setting full coverage" << endl;
