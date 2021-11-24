@@ -953,6 +953,8 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
         clear();
 
         {
+            auto start_kmer_stream = std::chrono::high_resolution_clock::now();
+
             KmerStream_Build_opt kms_opt;
 
             kms_opt.threads = nb_threads;
@@ -970,12 +972,20 @@ bool CompactedDBG<U, G>::read(const string& input_filename, const size_t nb_thre
             MinimizerIndex hmap_min_unitigs_tmp(min_index_size);
 
             hmap_min_unitigs = std::move(hmap_min_unitigs_tmp);
+
+            auto stop_kmer_stream = std::chrono::high_resolution_clock::now();
+            double duration_kmer_stream = std::chrono::duration_cast<std::chrono::microseconds>(stop_kmer_stream - start_kmer_stream).count() / 1e6;
+            cout << "Took " << std::setprecision(3) << duration_kmer_stream << "s for doing kmer stream things in CompactedDBG::read()" << std::endl;
         }
 
         setKmerGmerLength(k, g);
 
+        auto start_read_gfa = std::chrono::high_resolution_clock::now();
         if (verbose) cout << "CompactedDBG::read(): Entering readFASTA" << endl;
         readFASTA(input_filename, nb_threads);
+        auto stop_read_gfa = std::chrono::high_resolution_clock::now();
+        double duration_read_gfa = std::chrono::duration_cast<std::chrono::microseconds>(stop_read_gfa - start_read_gfa).count() / 1e6;
+        cout << "Took " << std::setprecision(3) << duration_read_gfa << "s for CompactedDBG::readGFA(input_filename = " << input_filename << ", nb_threads = " << nb_threads << ")" << std::endl;
     }
 
     if (verbose) cout << "CompactedDBG::read(): Setting full coverage" << endl;
