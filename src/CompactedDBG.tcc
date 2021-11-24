@@ -4301,6 +4301,8 @@ void CompactedDBG<U, G>::moveToAbundant() {
 }
 
 template<typename U, typename G>
+// parallel FASTA add unitig
+// (maybe also for GFA, but fasta is the one I checked)
 bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_unitig, SpinLock& lck_unitig, SpinLock& lck_kmer){
 
     int pos;
@@ -8187,7 +8189,12 @@ void CompactedDBG<U, G>::readFASTA(const string& graphfilename, const size_t nb_
         for (auto& t : workers) t.join();
 
         hmap_min_unitigs.release_threads();
+
+        auto start_move_to_abundant = std::chrono::high_resolution_clock::now();
         moveToAbundant();
+        auto stop_move_to_abundant = std::chrono::high_resolution_clock::now();
+        double duration_move_to_abundant = std::chrono::duration_cast<std::chrono::microseconds>(stop_move_to_abundant - start_move_to_abundant).count() / 1e6;
+        cout << "Took " << std::setprecision(3) << duration_move_to_abundant << "s for doing move to abundant in CompactedDBG::readFASTA()" << std::endl;
     }
 }
 
